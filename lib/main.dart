@@ -11,7 +11,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   Hive.registerAdapter(TransactionAdapter());
-  await Hive.openBox<Transaction>('filous_transactions');
+  
+  // 1. Open the box
+  final box = await Hive.openBox<Transaction>('filous_transactions');
+  
+  // 2. Clear out the old incompatible local data to stop the crash
+  await box.clear();
 
   runApp(const ProviderScope(child: FilousApp()));
 }
