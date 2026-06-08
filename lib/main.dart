@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'transaction_detail_modal.dart'; // Handles Read & Update operations
+import 'transaction_detail_modal.dart'; // Handles the Edit popup form
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
 import 'add_transaction_modal.dart';
@@ -174,40 +174,49 @@ class FilousDashboard extends ConsumerWidget {
                       itemCount: transactions.length,
                       itemBuilder: (context, index) {
                         final tx = transactions[index];
-                        return Dismissible(
-                          key: Key(tx.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            color: Colors.red.withOpacity(0.1),
-                            child: const Icon(Icons.delete, color: Colors.red),
-                          ),
-                          onDismissed: (_) => notifier.deleteTransaction(tx.id),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
-                            
-                            // 🔥 R (Read) & U (Update) Hooks Linked via Tap Event
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: theme.colorScheme.surface,
-                                shape: const RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                ),
-                                builder: (context) => TransactionDetailModal(transaction: tx),
-                              );
-                            },
-                            
                             title: Text(tx.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text('${tx.category} • ${tx.account}'),
-                            trailing: Text(
-                              '${tx.isExpense ? "-" : "+"} ₹${tx.amount.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900, 
-                                color: tx.isExpense ? Colors.redAccent : Colors.greenAccent,
-                              ),
+                            
+                            // 🛠️ Action row placed neatly on the right side of the item card
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${tx.isExpense ? "-" : "+"} ₹${tx.amount.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900, 
+                                    fontSize: 15,
+                                    color: tx.isExpense ? Colors.redAccent : Colors.greenAccent,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Quick Edit Action Button
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, size: 20),
+                                  splashRadius: 20,
+                                  onPressed: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: theme.colorScheme.surface,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                      ),
+                                      builder: (context) => TransactionDetailModal(transaction: tx),
+                                    );
+                                  },
+                                ),
+                                // Quick Delete Action Button
+                                IconButton(
+                                  icon: Icon(Icons.delete_outline, size: 20, color: Colors.redAccent.withOpacity(0.8)),
+                                  splashRadius: 20,
+                                  onPressed: () => notifier.deleteTransaction(tx.id),
+                                ),
+                              ],
                             ),
                           ),
                         );
