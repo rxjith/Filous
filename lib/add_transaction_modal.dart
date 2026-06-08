@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart'; // Handles clean calendar string formatting
+import 'package:intl/intl.dart';
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
 
@@ -18,28 +18,25 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   bool _isExpense = true;
   bool _isTransfer = false;
   
-  String _selectedCategory = 'Food';
+  String? _selectedCategory;
   String _selectedAccount = 'Cash';
   String _selectedToAccount = 'Bank';
   String _selectedRecurrence = 'None';
   String _selectedCurrency = 'INR';
   
-  // 🔥 NEW STATE: Tracks calendar selection, defaulting to today
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _categories = ['Food', 'Transport', 'Leisure', 'Subscriptions', 'Misc'];
   final List<String> _accounts = ['Cash', 'Bank', 'Credit'];
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
   final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
 
-  // Pops open Flutter's native calendar picker engine
   void _presentDatePicker() async {
     final now = DateTime.now();
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime(now.year - 5), // Allow retro logs up to 5 years past
-      lastDate: now, // Prevents logging future expenses
+      firstDate: DateTime(now.year - 5),
+      lastDate: now,
     );
     if (pickedDate == null) return;
     setState(() => _selectedDate = pickedDate);
@@ -48,8 +45,19 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   void _submitData() {
     final enteredTitle = _titleController.text.trim();
     final enteredAmount = double.tryParse(_amountController.text) ?? 0.0;
+    final activeBudgets = ref.read(transactionProvider.notifier).categoryBudgets.keys.toList();
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
+
+    // Determine target category fallback safety checks
+    String targetCategory = 'Misc';
+    if (_isTransfer) {
+      targetCategory = 'Transfer';
+    } else if (_selectedCategory != null && activeBudgets.contains(_selectedCategory)) {
+      targetCategory = _selectedCategory!;
+    } else if (activeBudgets.isNotEmpty) {
+      targetCategory = activeBudgets.first;
+    }
 
     double rateMultiplier = ref.read(transactionProvider.notifier).activeRates[_selectedCurrency] ?? 1.0;
 
@@ -57,8 +65,8 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: enteredTitle,
       amount: enteredAmount,
-      date: _selectedDate, // 🔥 Uses the user-defined backdated calendar stamp
-      category: _isTransfer ? 'Transfer' : _selectedCategory,
+      date: _selectedDate, 
+      category: targetCategory,
       account: _selectedAccount,
       isExpense: _isTransfer ? false : _isExpense,
       isTransfer: _isTransfer,
@@ -82,6 +90,14 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
+    // 🔥 Dynamically harvest your custom envelope categories map straight out of Hive cache
+    final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
+
+    // Fallback variable safety sync line
+    if (_selectedCategory == null || !activeCategories.contains(_selectedCategory)) {
+      _selectedCategory = activeCategories.isNotEmpty ? activeCategories.first : null;
+    }
 
     return Padding(
       padding: EdgeInsets.only(
@@ -93,7 +109,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('LOG TRANSACTION', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.primary)),
+            Text('LOG NEW TRANSACTION', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.primary)),
             const SizedBox(height: 16),
             
             Row(
@@ -125,7 +141,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             ),
             const SizedBox(height: 16),
 
-            // 🔥 NEW FIELD: Retroactive Date Picker Button Line
             InkWell(
               onTap: _presentDatePicker,
               borderRadius: BorderRadius.circular(8),
@@ -219,10 +234,11 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 if (!_isTransfer) ...[
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      // 🔥 READS LIVE USER CATEGORIES DIRECTLY
                       value: _selectedCategory,
                       decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Envelope Category'),
-                      items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-                      onChanged: (val) => setState(() => _selectedCategory = val!),
+                      items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                      onChanged: (val) => setState(() => _selectedCategory = val),
                     ),
                   ),
                   const SizedBox(width: 12),
