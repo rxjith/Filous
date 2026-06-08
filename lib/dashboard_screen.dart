@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'manage_categories_modal.dart'; 
 import 'add_transaction_modal.dart';   
-import 'transaction_provider.dart';   // 🔥 Added link to data engine
+import 'transaction_provider.dart';   
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -11,7 +11,6 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    // 🔥 Watch the active transaction array state from Riverpod
     final transactions = ref.watch(transactionProvider);
 
     return Scaffold(
@@ -42,7 +41,6 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // 🔥 FIXED: Swapped static text for a dynamic reactive list builder
       body: transactions.isEmpty
           ? const Center(
               child: Text(
@@ -57,7 +55,6 @@ class DashboardScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final tx = transactions[index];
                 
-                // Color formatting logic based on execution direction
                 final isExpense = tx.isExpense;
                 final amountColor = tx.isTransfer 
                     ? Colors.blueAccent 
@@ -66,7 +63,7 @@ class DashboardScreen extends ConsumerWidget {
 
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 6),
-                  color: const Color(0xFF16162A), // Slightly lighter midnight tint
+                  color: const Color(0xFF16162A), 
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -85,7 +82,7 @@ class DashboardScreen extends ConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     subtitle: Padding(
-                      padding: const EdgeInsets.top: 4.0),
+                      padding: const EdgeInsets.only(top: 4.0), // 🔥 FIXED syntax structure
                       child: Text(
                         '${tx.category.toUpperCase()} • ${DateFormat('dd MMM').format(tx.date)} • ${tx.account}',
                         style: const TextStyle(color: Colors.white38, fontSize: 12),
