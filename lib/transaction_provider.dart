@@ -22,6 +22,11 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
     _loadTransactions();
   }
 
+  void updateTransaction(Transaction updatedTransaction) {
+    _box.put(updatedTransaction.id, updatedTransaction);
+    _loadTransactions(); // Refresh the live state feed
+  }
+
   void _loadTransactions() {
     state = _box.values.toList().reversed.toList();
   }
