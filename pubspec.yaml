@@ -1,0 +1,34 @@
+name: filous
+description: "A sleek, minimalist budget tracker app."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Layout & Modern Design
+  dynamic_color: ^1.1.2       # Inherits theme colors from the OS/system wallpaper
+  fl_chart: ^0.66.0            # High-performance analytics charts for spending
+
+  # State Management & Ultra-fast Local Storage
+  flutter_riverpod: ^2.5.1     # Keeps app data rendering cleanly in sync
+  hive_flutter: ^1.1.0        # NoSQL database that saves data instantly to your SSD
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  
+  # Code Generation Tools (Required to make Hive database models talk to Dart)
+  build_runner: ^2.4.9
+  hive_generator: ^2.0.1
+
+flutter:
+  uses-material-design: true
