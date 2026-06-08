@@ -10,7 +10,7 @@ import 'spending_chart.dart';
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
-  /// Helper utility to turn transaction date values into readable Section Headers
+  /// Helper utility to turn transaction date values into smart relative/monthly Section Headers
   String _getGroupHeader(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -21,9 +21,12 @@ class DashboardScreen extends ConsumerWidget {
       return 'TODAY';
     } else if (txDate == yesterday) {
       return 'YESTERDAY';
-    } else {
-      // Formats out to clear "DAY, DD MONTH" setup (e.g., WEDNESDAY, 03 JUNE)
+    } else if (now.difference(txDate).inDays < 7) {
+      // For anything within the last week, show the weekday name (e.g., "WEDNESDAY, 03 JUNE")
       return DateFormat('EEEE, dd MMMM').format(date).toUpperCase();
+    } else {
+      // 🔥 MONTH-WISE SECTIONER: Anything older than a week gets neatly bundled by Month & Year (e.g., "MAY 2026")
+      return DateFormat('MMMM yyyy').format(date).toUpperCase();
     }
   }
 
@@ -101,7 +104,7 @@ class DashboardScreen extends ConsumerWidget {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Dynamic Date Header Section Divider
+                          // Dynamic Section Divider (Relative Days or Month Wise)
                           Padding(
                             padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 4.0),
                             child: Text(
@@ -145,7 +148,7 @@ class DashboardScreen extends ConsumerWidget {
                                 subtitle: Padding(
                                   padding: const EdgeInsets.only(top: 4.0),
                                   child: Text(
-                                    '${tx.category.toUpperCase()} • ${tx.account}',
+                                    '${tx.category.toUpperCase()} • ${tx.account} • ${DateFormat('dd MMM').format(tx.date)}',
                                     style: const TextStyle(color: Colors.white38, fontSize: 12),
                                   ),
                                 ),
