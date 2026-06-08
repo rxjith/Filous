@@ -28,8 +28,8 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
   final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
 
-  // Mock exchange rate table relative to standard baseline currency conversion bounds
-  final Map<String, double> _rates = {'INR': 1.0, 'USD': 0.012, 'EUR': 0.011, 'GBP': 0.0095};
+  // Static exchange multipliers relative to baseline baseline currency index values
+  final Map<String, double> _rates = {'INR': 1.0, 'USD': 83.50, 'EUR': 90.20, 'GBP': 106.10};
 
   void _submitData() {
     final enteredTitle = _titleController.text.trim();
@@ -37,9 +37,8 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
 
-    // Standardize inverse exchange ratios relative to base calculations
-    double rate = _rates[_selectedCurrency] ?? 1.0;
-    double standardizedRate = 1.0 / rate; 
+    // Fetch exchange rate to compute baseline valuation
+    double rateMultiplier = _rates[_selectedCurrency] ?? 1.0;
 
     final newTx = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -53,7 +52,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       toAccount: _isTransfer ? _selectedToAccount : null,
       recurrence: _selectedRecurrence,
       currency: _selectedCurrency,
-      exchangeRate: standardizedRate,
+      exchangeRate: rateMultiplier,
     );
 
     ref.read(transactionProvider.notifier).saveTransaction(newTx);
@@ -74,10 +73,9 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('LOG ENTRY', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+            Text('LOG NEW TRANSACTION', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.primary)),
             const SizedBox(height: 16),
             
-            // Transaction Type Selector Block
             Row(
               children: [
                 Expanded(
@@ -109,7 +107,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Description / Payee', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Description / Payee Name', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
 
@@ -142,9 +140,14 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _selectedAccount,
-                    decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'From Account' : 'Account'),
+                    decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'Source Account' : 'Wallet Account'),
                     items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
-                    onChanged: (val) => setState(() => _selectedAccount = val!),
+                    onChanged: (val) => setState(() {
+                      _selectedAccount = val!;
+                      if (_selectedAccount == _selectedToAccount) {
+                        _selectedToAccount = _accounts.firstWhere((a) => a != _selectedAccount);
+                      }
+                    }),
                   ),
                 ),
                 if (_isTransfer) ...[
@@ -152,7 +155,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _selectedToAccount,
-                      decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'To Account'),
+                      decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Destination Account'),
                       items: _accounts.where((a) => a != _selectedAccount).map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
                       onChanged: (val) => setState(() => _selectedToAccount = val!),
                     ),
@@ -168,7 +171,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _selectedCategory,
-                      decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Category Envelope'),
+                      decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Envelope Category'),
                       items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
                       onChanged: (val) => setState(() => _selectedCategory = val!),
                     ),
@@ -178,7 +181,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     value: _selectedRecurrence,
-                    decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Recurrence Schedule'),
+                    decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Recurrence Rule'),
                     items: _recurrences.map((rec) => DropdownMenuItem(value: rec, child: Text(rec))).toList(),
                     onChanged: (val) => setState(() => _selectedRecurrence = val!),
                   ),
@@ -189,7 +192,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 52,
               child: ElevatedButton(
                 onPressed: _submitData,
                 style: ElevatedButton.styleFrom(
@@ -198,7 +201,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                child: const Text('Save Transaction', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: const Text('Commit Entry Log', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
             const SizedBox(height: 20),
