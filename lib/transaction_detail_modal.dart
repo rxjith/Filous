@@ -58,7 +58,6 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
 
-    // 🔥 Pulling directly from the live network rates table managed by the provider
     double rateMultiplier = ref.read(transactionProvider.notifier).activeRates[_selectedCurrency] ?? 1.0;
 
     final updatedTx = Transaction(

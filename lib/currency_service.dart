@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 class CurrencyService {
   static const String _url = 'https://open.er-api.com/v6/latest/INR';
 
+  // Safe fallback parameters if the machine drops its internet connection
   static const Map<String, double> fallbackRates = {
     'INR': 1.0,
     'USD': 83.50,
@@ -27,7 +28,7 @@ class CurrencyService {
         };
       }
     } catch (e) {
-      print('Currency Fetch Failed: $e. Using fallback rates.');
+      print('Network Layer Warning: $e. Falling back to static values.');
     }
     return fallbackRates;
   }
