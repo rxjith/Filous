@@ -24,15 +24,14 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   late String _selectedToAccount;
   late String _selectedRecurrence;
   late String _selectedCurrency;
-  bool _isEditing = false; // Toggle state between READ and EDIT modes
+  bool _isEditing = false; 
 
   final List<String> _categories = ['Food', 'Transport', 'Leisure', 'Subscriptions', 'Misc'];
   final List<String> _accounts = ['Cash', 'Bank', 'Credit'];
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
   final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
 
-  // Mock conversion multipliers relative to baseline currency indices
-  final Map<String, double> _rates = {'INR': 1.0, 'USD': 0.012, 'EUR': 0.011, 'GBP': 0.0095};
+  final Map<String, double> _rates = {'INR': 1.0, 'USD': 83.50, 'EUR': 90.20, 'GBP': 106.10};
 
   @override
   void initState() {
@@ -61,14 +60,13 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
 
-    double rate = _rates[_selectedCurrency] ?? 1.0;
-    double standardizedRate = 1.0 / rate;
+    double rateMultiplier = _rates[_selectedCurrency] ?? 1.0;
 
     final updatedTx = Transaction(
-      id: widget.transaction.id, // Retain original database record key
+      id: widget.transaction.id, 
       title: enteredTitle,
       amount: enteredAmount,
-      date: widget.transaction.date, // Retain original logging timestamp
+      date: widget.transaction.date, 
       category: _isTransfer ? 'Transfer' : _selectedCategory,
       account: _selectedAccount,
       isExpense: _isTransfer ? false : _isExpense,
@@ -76,7 +74,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
       toAccount: _isTransfer ? _selectedToAccount : null,
       recurrence: _selectedRecurrence,
       currency: _selectedCurrency,
-      exchangeRate: standardizedRate,
+      exchangeRate: rateMultiplier,
     );
 
     ref.read(transactionProvider.notifier).saveTransaction(updatedTx);
@@ -101,11 +99,11 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _isEditing ? 'EDIT TRANSACTION' : 'TRANSACTION DETAILS', 
-                  style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                  _isEditing ? 'MODIFY ENTRIES' : 'LEDGER METADATA', 
+                  style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.primary),
                 ),
                 IconButton(
-                  icon: Icon(_isEditing ? Icons.close : Icons.edit_outlined, color: theme.colorScheme.primary),
+                  icon: Icon(_isEditing ? Icons.close : Icons.edit_note, color: theme.colorScheme.primary),
                   onPressed: () => setState(() => _isEditing = !_isEditing),
                 ),
               ],
@@ -113,10 +111,9 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
             const SizedBox(height: 16),
             
             if (!_isEditing) ...[
-              // 📖 UPGRADED READ MODE UI
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Description / Payee', style: TextStyle(fontSize: 12, color: Colors.white38)),
+                title: const Text('Title Descriptor', style: TextStyle(fontSize: 11, color: Colors.white38)),
                 subtitle: Text(widget.transaction.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               Row(
@@ -124,25 +121,18 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                   Expanded(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Logged Amount', style: TextStyle(fontSize: 12, color: Colors.white38)),
+                      title: const Text('Value Amount', style: TextStyle(fontSize: 11, color: Colors.white38)),
                       subtitle: Text(
-                        '$_selectedCurrency ${widget.transaction.amount.toStringAsFixed(2)}', 
-                        style: TextStyle(
-                          fontSize: 18, 
-                          fontWeight: FontWeight.bold, 
-                          color: _isTransfer ? Colors.blueAccent : (_isExpense ? Colors.redAccent : Colors.greenAccent)
-                        ),
+                        '$_selectedCurrency ${widget.transaction.amount.toStringAsFixed(0)}', 
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.black, color: _isTransfer ? Colors.blueAccent : (_isExpense ? Colors.redAccent : Colors.greenAccent)),
                       ),
                     ),
                   ),
                   Expanded(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Flow Configuration', style: TextStyle(fontSize: 12, color: Colors.white38)),
-                      subtitle: Text(
-                        _isTransfer ? 'Account Transfer 🔄' : (_isExpense ? 'Expense 🛑' : 'Income 💰'), 
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
+                      title: const Text('Flow Strategy', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                      subtitle: Text(_isTransfer ? 'Transfer 🔄' : (_isExpense ? 'Expense 🛑' : 'Income 💰'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -152,41 +142,27 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                   Expanded(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(_isTransfer ? 'From Account' : 'Wallet/Account', style: const TextStyle(fontSize: 12, color: Colors.white38)),
+                      title: Text(_isTransfer ? 'Debited Account' : 'Source Wallet', style: const TextStyle(fontSize: 11, color: Colors.white38)),
                       subtitle: Text(widget.transaction.account, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   Expanded(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text(_isTransfer ? 'To Account' : 'Category Envelope', style: const TextStyle(fontSize: 12, color: Colors.white38)),
+                      title: Text(_isTransfer ? 'Credited Account' : 'Budget Envelope', style: const TextStyle(fontSize: 11, color: Colors.white38)),
                       subtitle: Text(_isTransfer ? (widget.transaction.toAccount ?? 'None') : widget.transaction.category, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Recurrence Interval', style: TextStyle(fontSize: 12, color: Colors.white38)),
-                      subtitle: Text(widget.transaction.recurrence, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  if (widget.transaction.currency != 'INR')
-                    Expanded(
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Normalized Cost', style: TextStyle(fontSize: 12, color: Colors.white38)),
-                        subtitle: Text('₹${(widget.transaction.amount * widget.transaction.exchangeRate).toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white60)),
-                      ),
-                    ),
-                ],
-              ),
+              if (widget.transaction.currency != 'INR')
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Standardized Cost Evaluation (Base Currency)', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                  subtitle: Text('₹${widget.transaction.baseAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
+                ),
               const SizedBox(height: 24),
             ] else ...[
-              // 📝 UPGRADED UPDATE MODE FORM
               Row(
                 children: [
                   Expanded(
@@ -217,7 +193,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
               const SizedBox(height: 16),
               TextField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Description / Payee', border: OutlineInputBorder()),
+                decoration: const InputDecoration(labelText: 'Payee Descriptor', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               Row(
@@ -227,7 +203,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                     child: TextField(
                       controller: _amountController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(labelText: 'Amount Balance', border: OutlineInputBorder()),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -248,7 +224,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _selectedAccount,
-                      decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'From Account' : 'Account'),
+                      decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'From Account' : 'Account Source'),
                       items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
                       onChanged: (val) => setState(() => _selectedAccount = val!),
                     ),
@@ -302,7 +278,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),
-                  child: const Text('Update Entry Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: const Text('Apply Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 20),
