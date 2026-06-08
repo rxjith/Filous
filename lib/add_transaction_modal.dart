@@ -33,9 +33,8 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       isExpense: _isExpense,
     );
 
-    // Save using our Riverpod provider
     ref.read(transactionProvider.notifier).addTransaction(newTx);
-    Navigator.of(context).pop(); // Close the bottom sheet
+    Navigator.of(context).pop();
   }
 
   @override
@@ -44,7 +43,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
     return Padding(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom, // Push above the keyboard
+        bottom: MediaQuery.of(context).viewInsets.bottom,
         left: 20, right: 20, top: 20,
       ),
       child: SingleChildScrollView(
@@ -52,10 +51,9 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('NEW ENTRY', style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 1, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+            Text('NEW ENTRY', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.onSurface.withOpacity(0.6))),
             const SizedBox(height: 16),
             
-            // Transaction Type Toggle
             Row(
               children: [
                 Expanded(
@@ -88,7 +86,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             ),
             const SizedBox(height: 16),
             
-            // Category Dropdown
             DropdownButtonFormField<String>(
               value: _selectedCategory,
               decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Category'),
@@ -97,7 +94,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             ),
             const SizedBox(height: 24),
             
-            // Save Button
             SizedBox(
               width: double.infinity,
               height: 50,
