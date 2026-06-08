@@ -5,9 +5,12 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
 import 'add_transaction_modal.dart';
+import 'spending_chart.dart'; // Handles the visual breakdown calculations
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 1. Initialize Hive local binary store
   await Hive.initFlutter();
   Hive.registerAdapter(TransactionAdapter());
   await Hive.openBox<Transaction>('filous_transactions');
@@ -26,6 +29,7 @@ class FilousApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        // High-contrast monochromatic baseline if system accents aren't available
         const fallbackDarkScheme = ColorScheme.dark(
           primary: Colors.white,
           secondary: Colors.white70,
@@ -35,7 +39,7 @@ class FilousApp extends StatelessWidget {
         return MaterialApp(
           title: 'Filous',
           debugShowCheckedModeBanner: false,
-          themeMode: ThemeMode.dark,
+          themeMode: ThemeMode.dark, // Keep it strictly dark mode
           darkTheme: ThemeData(
             useMaterial3: true,
             colorScheme: darkDynamic ?? fallbackDarkScheme,
@@ -56,7 +60,9 @@ class FilousDashboard extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => const AddTransactionModal(),
     );
   }
@@ -64,12 +70,17 @@ class FilousDashboard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    
+    // Watch both items so the UI re-triggers state shifts instantly
     final transactions = ref.watch(transactionProvider);
-    final balance = ref.read(transactionProvider.notifier).totalBalance;
+    final balance = ref.watch(transactionProvider.notifier).totalBalance;
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FILOUS', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 20)),
+        title: const Text(
+          'FILOUS', 
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 20),
+        ),
         centerTitle: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -79,35 +90,68 @@ class FilousDashboard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Total Balance Display Card
+            // Total Balance Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.colorScheme.primary.withOpacity(0.1), width: 1),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.1), 
+                  width: 1,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('TOTAL BALANCE', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  Text(
+                    'TOTAL BALANCE', 
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6), 
+                      fontSize: 11, 
+                      fontWeight: FontWeight.bold, 
+                      letterSpacing: 1,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     '₹ ${balance.toStringAsFixed(2)}', 
-                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 38, fontWeight: FontWeight.w900)
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface, 
+                      fontSize: 38, 
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            Text('RECENT TRANSACTIONS', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+            
+            // Neon Analytics Donut Ring
+            SpendingChart(transactions: transactions),
+            
+            const SizedBox(height: 16),
+            Text(
+              'RECENT TRANSACTIONS', 
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withOpacity(0.6), 
+                fontSize: 11, 
+                fontWeight: FontWeight.bold, 
+                letterSpacing: 1,
+              ),
+            ),
             const SizedBox(height: 12),
             
-            // Transaction List
+            // Transaction Feed
             Expanded(
               child: transactions.isEmpty
-                  ? const Center(child: Text('No transactions logged yet.\nTap below to register an entry.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, height: 1.5)))
+                  ? const Center(
+                      child: Text(
+                        'No transactions logged yet.\nTap below to register an entry.', 
+                        textAlign: TextAlign.center, 
+                        style: TextStyle(color: Colors.white38, height: 1.5),
+                      ),
+                    )
                   : ListView.builder(
                       itemCount: transactions.length,
                       itemBuilder: (context, index) {
@@ -126,7 +170,10 @@ class FilousDashboard extends ConsumerWidget {
                           },
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                            title: Text(tx.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            title: Text(
+                              tx.title, 
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             subtitle: Text('${tx.category} • ${tx.date.day}/${tx.date.month}'),
                             trailing: Text(
                               '${tx.isExpense ? "-" : "+"} ₹${tx.amount.toStringAsFixed(2)}',
