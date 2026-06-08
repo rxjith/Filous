@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart'; // Handles clean calendar string formatting
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
 
@@ -22,11 +23,27 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   String _selectedToAccount = 'Bank';
   String _selectedRecurrence = 'None';
   String _selectedCurrency = 'INR';
+  
+  // 🔥 NEW STATE: Tracks calendar selection, defaulting to today
+  DateTime _selectedDate = DateTime.now();
 
   final List<String> _categories = ['Food', 'Transport', 'Leisure', 'Subscriptions', 'Misc'];
   final List<String> _accounts = ['Cash', 'Bank', 'Credit'];
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
   final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
+
+  // Pops open Flutter's native calendar picker engine
+  void _presentDatePicker() async {
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(now.year - 5), // Allow retro logs up to 5 years past
+      lastDate: now, // Prevents logging future expenses
+    );
+    if (pickedDate == null) return;
+    setState(() => _selectedDate = pickedDate);
+  }
 
   void _submitData() {
     final enteredTitle = _titleController.text.trim();
@@ -34,14 +51,13 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
 
-    // 🔥 Pulling directly from the live network rates table managed by the provider
     double rateMultiplier = ref.read(transactionProvider.notifier).activeRates[_selectedCurrency] ?? 1.0;
 
     final newTx = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: enteredTitle,
       amount: enteredAmount,
-      date: DateTime.now(),
+      date: _selectedDate, // 🔥 Uses the user-defined backdated calendar stamp
       category: _isTransfer ? 'Transfer' : _selectedCategory,
       account: _selectedAccount,
       isExpense: _isTransfer ? false : _isExpense,
@@ -77,7 +93,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('LOG NEW TRANSACTION', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.primary)),
+            Text('LOG TRANSACTION', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.primary)),
             const SizedBox(height: 16),
             
             Row(
@@ -106,6 +122,33 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+
+            // 🔥 NEW FIELD: Retroactive Date Picker Button Line
+            InkWell(
+              onTap: _presentDatePicker,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(border: Border.all(color: Colors.white24), borderRadius: BorderRadius.circular(8)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.calendar_month, color: theme.colorScheme.primary, size: 20),
+                        const SizedBox(width: 12),
+                        const Text('Transaction Date:', style: TextStyle(color: Colors.white70)),
+                      ],
+                    ),
+                    Text(
+                      DateFormat('dd MMM yyyy').format(_selectedDate),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: 16),
 
