@@ -1,33 +1,24 @@
-import 'dart:io'; // Required for path overriding
 import 'package:flutter/material.dart';
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'transaction_detail_modal.dart'; // Handles the Edit popup form
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
-import 'add_transaction_modal.dart';
-import 'spending_chart.dart';
+import 'transaction_detail_modal.dart';
+
+// Universal utility helper to display currency symbols correctly
+String getCurrencySymbol(String currencyCode) {
+  switch (currencyCode) {
+    case 'USD': return '\$';
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    default: return '₹';
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
+  await Hive.initFlutter('test_db');
   Hive.registerAdapter(TransactionAdapter());
-  
-  // 1. Force a localized sandbox directory inside the project workspace to prevent system cache crashes
-  final testDir = Directory('${Directory.current.path}/test_db');
-  if (await testDir.exists()) {
-    try {
-      await testDir.delete(recursive: true);
-    } catch (e) {
-      // Catch file system locks gracefully if any
-    }
-  }
-  Hive.init(testDir.path); 
-
-  // 2. Open the clean box instance safely
-  await Hive.openBox<Transaction>('filous_transactions');
-
   runApp(const ProviderScope(child: FilousApp()));
 }
 
@@ -36,203 +27,165 @@ class FilousApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DynamicColorBuilder(
-      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        const fallbackDarkScheme = ColorScheme.dark(
-          primary: Colors.white,
-          secondary: Colors.white70,
-          surface: Color(0xFF121212),
-        );
-        return MaterialApp(
-          title: 'Filous',
-          debugShowCheckedModeBanner: false,
-          themeMode: ThemeMode.dark,
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            colorScheme: darkDynamic ?? fallbackDarkScheme,
-            scaffoldBackgroundColor: darkDynamic?.surface ?? Colors.black,
-          ),
-          home: const FilousDashboard(),
-        );
-      },
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Filous Budgeting',
+      theme: ThemeData.dark(useMaterial3: true).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.tealAccent,
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: const DashboardScreen(),
     );
   }
 }
 
-class FilousDashboard extends ConsumerWidget {
-  const FilousDashboard({super.key});
-
-  void _showAddPanel(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => const AddTransactionModal(),
-    );
-  }
+class DashboardScreen extends ConsumerWidget {
+  const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final transactions = ref.watch(transactionProvider);
-    final notifier = ref.watch(transactionProvider.notifier);
+    final notifier = ref.read(transactionProvider.notifier);
+    final theme = Theme.of(context);
+
+    // Compute localized aggregates for current month's performance
+    double totalIncome = 0;
+    final Map<String, double> structuralSpending = {};
+
+    for (var cat in notifier.categoryBudgets.keys) {
+      structuralSpending[cat] = 0.0;
+    }
+
+    for (var tx in transactions) {
+      if (tx.isTransfer) continue; // Transfers are value-neutral movements
+      if (tx.isExpense) {
+        structuralSpending[tx.category] = (structuralSpending[tx.category] ?? 0) + tx.baseAmount;
+      } else {
+        totalIncome += tx.baseAmount;
+      }
+    }
+
+    double totalExpenses = structuralSpending.values.fold(0, (sum, item) => sum + item);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FILOUS x CASHEW', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 20)),
-        centerTitle: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text('FILOUS DASHBOARD', style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 1.5)),
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 💳 CASHEW MULTI-ACCOUNT ROW LAYOUT
-              Row(
-                children: ['Cash', 'Bank', 'Credit'].map((acc) {
-                  final bal = notifier.getAccountBalance(acc);
-                  return Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.05)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(acc.toUpperCase(), style: TextStyle(fontSize: 10, color: theme.colorScheme.onSurface.withOpacity(0.5), fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 6),
-                          Text('₹${bal.toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                        ],
-                      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cash Flow Metrics Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Column(
+                      children: [
+                        const Text('INFLOW (BASE)', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                        Text('₹${totalIncome.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.greenAccent)),
+                      ],
                     ),
-                  );
-                }).toList(),
+                    Column(
+                      children: [
+                        const Text('OUTFLOW (BASE)', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                        Text('₹${totalExpenses.toStringAsFixed(0)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.redAccent)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
+            ),
+            const SizedBox(height: 16),
+            
+            const Text('ACTIVE CATEGORY ENVELOPES', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white54)),
+            const SizedBox(height: 8),
 
-              // Visual Analytics Ring
-              SpendingChart(transactions: transactions),
-              const SizedBox(height: 16),
+            // Dynamic Category Budgets List
+            ...notifier.categoryBudgets.entries.map((entry) {
+              final category = entry.key;
+              final limit = entry.value;
+              final spent = structuralSpending[category] ?? 0.0;
+              final ratio = (spent / limit).clamp(0.0, 1.0);
 
-              // 📊 CASHEW LIVE BUDGET ENVELOPE PROGRESS GAUGE BAR LIST
-              Text('ACTIVE BUDGETS', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-              const SizedBox(height: 12),
-              ...notifier.categoryBudgets.entries.map((budget) {
-                final category = budget.key;
-                final limit = budget.value;
-                final spent = notifier.getCategorySpending(category);
-                double percent = spent / limit;
-                if (percent > 1.0) percent = 1.0; 
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                style: BoxConstraints(maxWidth: double.infinity),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(category, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        Text('₹${spent.toStringAsFixed(0)} / ₹${limit.toStringAsFixed(0)}', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    LinearProgressIndicator(value: ratio, color: ratio > 0.9 ? Colors.redAccent : theme.colorScheme.primary),
+                  ],
+                ),
+              );
+            }),
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6.0),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(category, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                          Text('₹${spent.toStringAsFixed(0)} / ₹${limit.toStringAsFixed(0)}', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6))),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: percent,
-                          minHeight: 6,
-                          backgroundColor: Colors.white10,
-                          valueColor: AlwaysStoppedAnimation<Color>(spent > limit ? Colors.redAccent : theme.colorScheme.primary),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              
-              const SizedBox(height: 28),
-              Text('RECENT TRANSACTIONS', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-              const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            const Text('TRANSACTION LEDGER', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white54)),
+            const SizedBox(height: 8),
 
-              // Scrollable Ledger List
-              transactions.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Center(child: Text('No entries registered.', style: TextStyle(color: Colors.white38))),
-                    )
+            // Transaction History View
+            Expanded(
+              child: transactions.isEmpty
+                  ? const Center(child: Text('No logged entries available.', style: TextStyle(color: Colors.white38)))
                   : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: transactions.length,
-                      itemBuilder: (context, index) {
-                        final tx = transactions[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4.0),
-                          child: ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(tx.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('${tx.category} • ${tx.account}'),
-                            
-                            // 🛠️ Action row placed neatly on the right side of the item card
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '${tx.isExpense ? "-" : "+"} ₹${tx.amount.toStringAsFixed(0)}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900, 
-                                    fontSize: 15,
-                                    color: tx.isExpense ? Colors.redAccent : Colors.greenAccent,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                // Quick Edit Action Button
-                                IconButton(
-                                  icon: const Icon(Icons.edit_outlined, size: 20),
-                                  splashRadius: 20,
-                                  onPressed: () {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: theme.colorScheme.surface,
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                      ),
-                                      builder: (context) => TransactionDetailModal(transaction: tx),
-                                    );
-                                  },
-                                ),
-                                // Quick Delete Action Button
-                                IconButton(
-                                  icon: Icon(Icons.delete_outline, size: 20, color: Colors.redAccent.withOpacity(0.8)),
-                                  splashRadius: 20,
-                                  onPressed: () => notifier.deleteTransaction(tx.id),
-                                ),
-                              ],
+                      itemBuilder: (ctx, idx) {
+                        final tx = transactions[idx];
+                        final displaySymbol = getCurrencySymbol(tx.currency);
+
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundColor: tx.isTransfer ? Colors.blue.withOpacity(0.2) : (tx.isExpense ? Colors.red.withOpacity(0.2) : Colors.green.withOpacity(0.2)),
+                            child: Icon(
+                              tx.isTransfer ? Icons.swap_horiz : (tx.isExpense ? Icons.arrow_downward : Icons.arrow_upward),
+                              color: tx.isTransfer ? Colors.blueAccent : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
                             ),
+                          ),
+                          title: Text(tx.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(tx.isTransfer ? '${tx.account} ➔ ${tx.toAccount}' : '${tx.account} • ${tx.category}'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${tx.isExpense ? "-" : "+"} $displaySymbol${tx.amount.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 15,
+                                  color: tx.isTransfer ? Colors.blueWithOpacity(0.8) : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 20, color: Colors.white38),
+                                onPressed: () => notifier.deleteTransaction(tx.id),
+                              ),
+                            ],
+                          ),
+                          onTap: () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            builder: (_) => TransactionDetailModal(transaction: tx),
                           ),
                         );
                       },
                     ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddPanel(context),
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        elevation: 0,
-        label: const Text('Log Transaction', style: TextStyle(fontWeight: FontWeight.bold)),
-        icon: const Icon(Icons.add),
       ),
     );
   }

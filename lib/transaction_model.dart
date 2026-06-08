@@ -14,47 +14,47 @@ class Transaction extends HiveObject {
   final double amount;
 
   @HiveField(3)
-  final String category;
-
-  @HiveField(4)
-  final String account;
-
-  @HiveField(5)
-  final bool isExpense;
-
-  @HiveField(6)
   final DateTime date;
 
-  // 🔄 New: Supports internal account movements
+  @HiveField(4)
+  final String category;
+
+  @HiveField(5)
+  final String account;
+
+  @HiveField(6)
+  final bool isExpense;
+
   @HiveField(7)
   final bool isTransfer;
 
   @HiveField(8)
-  final String? toAccount; // Required only if isTransfer is true
+  final String? toAccount;
 
-  // 🔁 New: Recurrence schedule tracking
   @HiveField(9)
-  final String recurrence; // 'None', 'Daily', 'Weekly', 'Monthly', 'Yearly'
+  final String recurrence;
 
-  // 💱 New: Multi-currency support
   @HiveField(10)
-  final String currency; // e.g., 'INR', 'USD', 'EUR'
+  final String currency;
 
   @HiveField(11)
-  final double exchangeRate; // Value relative to base currency
+  final double exchangeRate;
 
   Transaction({
     required this.id,
     required this.title,
     required this.amount,
+    required this.date,
     required this.category,
     required this.account,
     required this.isExpense,
-    required this.date,
     this.isTransfer = false,
     this.toAccount,
     this.recurrence = 'None',
     this.currency = 'INR',
     this.exchangeRate = 1.0,
   });
+
+  // Calculate the standardized base cost (INR) used for budgets and charts
+  double get baseAmount => amount * exchangeRate;
 }

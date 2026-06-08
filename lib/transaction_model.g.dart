@@ -20,10 +20,10 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       id: fields[0] as String,
       title: fields[1] as String,
       amount: fields[2] as double,
-      category: fields[3] as String,
-      account: fields[4] as String,
-      isExpense: fields[5] as bool,
-      date: fields[6] as DateTime,
+      date: fields[3] as DateTime,
+      category: fields[4] as String,
+      account: fields[5] as String,
+      isExpense: fields[6] as bool,
       isTransfer: fields[7] as bool,
       toAccount: fields[8] as String?,
       recurrence: fields[9] as String,
@@ -43,13 +43,13 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
       ..writeByte(2)
       ..write(obj.amount)
       ..writeByte(3)
-      ..write(obj.category)
-      ..writeByte(4)
-      ..write(obj.account)
-      ..writeByte(5)
-      ..write(obj.isExpense)
-      ..writeByte(6)
       ..write(obj.date)
+      ..writeByte(4)
+      ..write(obj.category)
+      ..writeByte(5)
+      ..write(obj.account)
+      ..writeByte(6)
+      ..write(obj.isExpense)
       ..writeByte(7)
       ..write(obj.isTransfer)
       ..writeByte(8)

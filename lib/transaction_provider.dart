@@ -2,123 +2,103 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'transaction_model.dart';
 
-// Global provider for the active currency configuration
-final baseCurrencyProvider = StateProvider<String>((ref) => 'INR');
-
 final transactionProvider = StateNotifierProvider<TransactionNotifier, List<Transaction>>((ref) {
   return TransactionNotifier();
 });
 
 class TransactionNotifier extends StateNotifier<List<Transaction>> {
-  final Box<Transaction> _box = Hive.box<Transaction>('filous_transactions');
+  TransactionNotifier() : super([]) {
+    _initHive();
+  }
 
-  // Hardcoded Cashew-style monthly envelope thresholds
+  late Box<Transaction> _box;
   final Map<String, double> categoryBudgets = {
-    'Food': 4000.00,
-    'Transport': 1500.00,
-    'Leisure': 3000.00,
-    'Subscriptions': 2000.00,
-    'Misc': 5000.00,
+    'Food': 8000.0,
+    'Transport': 3000.0,
+    'Leisure': 5000.0,
+    'Subscriptions': 4000.0,
+    'Misc': 2000.0,
   };
 
-  TransactionNotifier() : super([]) {
-    _loadAndProcessTransactions();
+  Future<void> _initHive() async {
+    _box = await Hive.openBox<Transaction>('transactions_box');
+    _loadAndProcess();
   }
 
-  void _loadAndProcessTransactions() {
+  void _loadAndProcess() {
     final rawList = _box.values.toList();
-    // Run the automated recurrence checker before loading data into memory
+    // Sort transactions chronologically
+    rawList.sort((a, b) => b.date.compareTo(a.date));
+    state = rawList;
+    
+    // Process schedules cleanly after rendering current data state
     _processRecurringSchedules(rawList);
-    state = _box.values.toList().reversed.toList();
   }
 
-  // CREATE / UPDATE: Handles normal entries, transfers, and edits
-  void saveTransaction(Transaction transaction) {
-    _box.put(transaction.id, transaction);
-    _loadAndProcessTransactions();
+  void saveTransaction(Transaction tx) {
+    _box.put(tx.id, tx);
+    _loadAndProcess();
   }
 
-  // DELETE
   void deleteTransaction(String id) {
     _box.delete(id);
-    _loadAndProcessTransactions();
+    _loadAndProcess();
   }
 
-  // 💳 MULTI-ACCOUNT ACCOUNTING ENGINE
-  double getAccountBalance(String accountName) {
-    double total = 0.0;
-    for (var tx in state) {
-      // Normalize amount back to base currency value
-      final baseAmount = tx.amount * tx.exchangeRate;
-
-      if (tx.isTransfer) {
-        if (tx.account == accountName) total -= baseAmount;   // Source account debited
-        if (tx.toAccount == accountName) total += baseAmount; // Destination account credited
-      } else {
-        if (tx.account == accountName) {
-          total += tx.isExpense ? -baseAmount : baseAmount;
-        }
-      }
-    }
-    return total;
-  }
-
-  // 📊 ENVELOPE BUDGET MONITOR
-  double getCategorySpending(String category) {
-    return state
-        .where((tx) => tx.category == category && tx.isExpense && !tx.isTransfer)
-        .fold(0.0, (sum, tx) => sum + (tx.amount * tx.exchangeRate));
-  }
-
-  // 🔁 CASHEW-STYLE AUTOMATED RECURRING ENGINE
-  void _processRecurringSchedules(List<Transaction> currentTransactions) {
+  void _processRecurringSchedules(List<Transaction> currentTxs) {
     final now = DateTime.now();
     List<Transaction> newSpawns = [];
+    final processedBaseTitles = <String>{};
 
-    for (var tx in currentTransactions) {
-      if (tx.recurrence == 'None') continue;
+    for (var tx in currentTxs) {
+      if (tx.recurrence == 'None' || processedBaseTitles.contains(tx.title)) continue;
+      processedBaseTitles.add(tx.title);
 
-      // Find the latest recorded instance of this specific recurring chain
+      // Find when this transaction type was last executed
       DateTime lastTriggerDate = tx.date;
-      for (var checkTx in currentTransactions) {
-        if (checkTx.title == tx.title && checkTx.id != tx.id && checkTx.date.isAfter(lastTriggerDate)) {
+      for (var checkTx in currentTxs) {
+        if (checkTx.title == tx.title && checkTx.date.isAfter(lastTriggerDate)) {
           lastTriggerDate = checkTx.date;
         }
       }
 
-      // Calculate next expected due date based on schedule rule
+      // Project when the next billing date arrives
       DateTime nextDueDate = _calculateNextDate(lastTriggerDate, tx.recurrence);
 
-      // Catch up if the app hasn't been opened in a while (spawning missing entries)
+      // ONLY spawn past billing items if they have actually elapsed
       while (nextDueDate.isBefore(now)) {
-        final spawnedTx = Transaction(
-          id: '${tx.id}_${nextDueDate.millisecondsSinceEpoch}',
-          title: tx.title,
-          amount: tx.amount,
-          category: tx.category,
-          account: tx.account,
-          isExpense: tx.isExpense,
-          date: nextDueDate,
-          isTransfer: tx.isTransfer,
-          toAccount: tx.toAccount,
-          recurrence: tx.recurrence,
-          currency: tx.currency,
-          exchangeRate: tx.exchangeRate,
-        );
-        newSpawns.add(spawnedTx);
+        final uniqueId = '${tx.id}_spawn_${nextDueDate.year}_${nextDueDate.month}_${nextDueDate.day}';
+        
+        if (!_box.containsKey(uniqueId)) {
+          newSpawns.add(Transaction(
+            id: uniqueId,
+            title: tx.title,
+            amount: tx.amount,
+            category: tx.category,
+            account: tx.account,
+            isExpense: tx.isExpense,
+            date: nextDueDate,
+            isTransfer: tx.isTransfer,
+            toAccount: tx.toAccount,
+            recurrence: tx.recurrence,
+            currency: tx.currency,
+            exchangeRate: tx.exchangeRate,
+          ));
+        }
         nextDueDate = _calculateNextDate(nextDueDate, tx.recurrence);
       }
     }
 
     if (newSpawns.isNotEmpty) {
-      for (var newTx in newSpawns) {
-        _box.put(newTx.id, newTx);
+      for (var spawnedTx in newSpawns) {
+        _box.put(spawnedTx.id, spawnedTx);
       }
+      _loadAndProcess();
     }
   }
 
-  DateTime _calculateNextDate(DateTime current, String rule) {
-    switch (rule) {
+  DateTime _calculateNextDate(DateTime current, String frequency) {
+    switch (frequency) {
       case 'Daily': return current.add(const Duration(days: 1));
       case 'Weekly': return current.add(const Duration(days: 7));
       case 'Monthly': return DateTime(current.year, current.month + 1, current.day);
