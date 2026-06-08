@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:intl/intl.dart'; // 🔥 Added for advanced calendar parsing strings
+import 'package:intl/intl.dart'; 
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
 import 'transaction_detail_modal.dart';
@@ -79,13 +79,12 @@ class DashboardScreen extends ConsumerWidget {
 
     double totalExpenses = structuralSpending.values.fold(0, (sum, item) => sum + item);
 
-    // 🔥 NESTED SEGREGATION ENGINE
-    // Map structure: Year-Month String -> (Day String -> List of Transactions)
+    // Multi-tier Sorting Map Array Engine: Month Banner -> (Day Banner -> Multi-logs)
     final Map<String, Map<String, List<Transaction>>> segregatedLogs = {};
 
     for (var tx in transactions) {
-      final monthKey = DateFormat('MMMM yyyy').format(tx.date); // e.g., "June 2026"
-      final dayKey = DateFormat('EEE, dd MMM').format(tx.date);   // e.g., "Mon, 08 Jun"
+      final monthKey = DateFormat('MMMM yyyy').format(tx.date); 
+      final dayKey = DateFormat('EEE, dd MMM').format(tx.date);   
 
       if (!segregatedLogs.containsKey(monthKey)) {
         segregatedLogs[monthKey] = {};
@@ -161,7 +160,6 @@ class DashboardScreen extends ConsumerWidget {
             const Text('TRANSACTION LEDGER', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white54)),
             const SizedBox(height: 8),
 
-            // 🔥 COMPLETELY REDESIGNED SEGREGATED LEDGER UI
             Expanded(
               child: segregatedLogs.isEmpty
                   ? const Center(child: Text('No logged entries available.', style: TextStyle(color: Colors.white38)))
@@ -174,7 +172,6 @@ class DashboardScreen extends ConsumerWidget {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 🧱 LEVEL 1: Month-Wise Header Banner
                             Padding(
                               padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
                               child: Container(
@@ -185,12 +182,12 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                                 child: Text(
                                   monthString.toUpperCase(),
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.black, color: theme.colorScheme.primary, letterSpacing: 1),
+                                  // 🔥 FIXED PERMANENTLY TO W900
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: theme.colorScheme.primary, letterSpacing: 1),
                                 ),
                               ),
                             ),
                             
-                            // 🧱 LEVEL 2: Day-Date Grouping
                             ...dayGroups.entries.map((dayEntry) {
                               final dayString = dayEntry.key;
                               final subTransactions = dayEntry.value;
@@ -203,14 +200,12 @@ class DashboardScreen extends ConsumerWidget {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      // Day Header subtext line
                                       Text(
                                         dayString,
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white60),
                                       ),
                                       const Divider(height: 16, color: Colors.white10),
                                       
-                                      // 🧱 LEVEL 3: Transaction logs under this exact day
                                       ListView.builder(
                                         shrinkWrap: true,
                                         physics: const NeverScrollableScrollPhysics(),

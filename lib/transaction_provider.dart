@@ -15,7 +15,7 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   late Box<Transaction> _box;
   final CurrencyService _currencyService = CurrencyService();
   
-  // 🔥 THE MISSING VARIABLE EXPOSED CLEARLY FOR THE MODALS TO READ
+  // Publicly exposed runtime translation metrics
   Map<String, double> activeRates = CurrencyService.fallbackRates;
 
   final Map<String, double> categoryBudgets = {
@@ -28,15 +28,13 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
 
   Future<void> _initHiveAndRates() async {
     _box = await Hive.openBox<Transaction>('transactions_box');
-    
-    // Fetch live market trends cleanly over the network wire
     activeRates = await _currencyService.fetchLiveRates();
-    
     _loadAndProcess();
   }
 
   void _loadAndProcess() {
     final rawList = _box.values.toList();
+    // Sort chronologically descending (newest entries first)
     rawList.sort((a, b) => b.date.compareTo(a.date));
     state = rawList;
     _processRecurringSchedules(rawList);

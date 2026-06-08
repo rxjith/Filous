@@ -55,6 +55,6 @@ class Transaction extends HiveObject {
     this.exchangeRate = 1.0,
   });
 
-  // Calculate the standardized base cost (INR) used for budgets and charts
+  // Normalizes foreign amounts into the baseline standard (INR)
   double get baseAmount => amount * exchangeRate;
 }
