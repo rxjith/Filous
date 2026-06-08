@@ -69,7 +69,7 @@ class FilousDashboard extends ConsumerWidget {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FILOUS', style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 1.5, fontSize: 20)),
+        title: const Text('FILOUS', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 20)),
         centerTitle: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -95,7 +95,7 @@ class FilousDashboard extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     '₹ ${balance.toStringAsFixed(2)}', 
-                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 38, fontWeight: FontWeight.black)
+                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 38, fontWeight: FontWeight.w900)
                   ),
                 ],
               ),
@@ -131,7 +131,7 @@ class FilousDashboard extends ConsumerWidget {
                             trailing: Text(
                               '${tx.isExpense ? "-" : "+"} ₹${tx.amount.toStringAsFixed(2)}',
                               style: TextStyle(
-                                fontWeight: FontWeight.black,
+                                fontWeight: FontWeight.w900,
                                 color: tx.isExpense ? Colors.redAccent : Colors.greenAccent,
                                 fontSize: 16,
                               ),
