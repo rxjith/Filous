@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'manage_categories_modal.dart'; // 🔥 Pull in your custom envelope manager sheet
-import 'add_transaction_modal.dart';   // Pull in your transaction form modal
+import 'package:intl/intl.dart';
+import 'manage_categories_modal.dart'; 
+import 'add_transaction_modal.dart';   
+import 'transaction_provider.dart';   // 🔥 Added link to data engine
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -9,16 +11,14 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    // 🔥 Watch the active transaction array state from Riverpod
+    final transactions = ref.watch(transactionProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'FILOUS DASHBOARD', 
-          style: TextStyle(
-            fontWeight: FontWeight.w900, 
-            letterSpacing: 1.5,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 20),
         ),
         centerTitle: true,
         elevation: 0,
@@ -36,18 +36,73 @@ class DashboardScreen extends ConsumerWidget {
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-                builder: (context) => const ManageCategoriesModal(), // 🔥 Pops up your custom creation engine
+                builder: (context) => const ManageCategoriesModal(), 
               ),
             ),
           ),
         ],
       ),
-      body: const Center(
-        child: Text(
-          'Your main transactions overview list layout stays right here!',
-          style: TextStyle(color: Colors.white54),
-        ),
-      ),
+      // 🔥 FIXED: Swapped static text for a dynamic reactive list builder
+      body: transactions.isEmpty
+          ? const Center(
+              child: Text(
+                'No transactions logged yet.\nTap + to start budgeting!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white38, height: 1.5),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              itemCount: transactions.length,
+              itemBuilder: (context, index) {
+                final tx = transactions[index];
+                
+                // Color formatting logic based on execution direction
+                final isExpense = tx.isExpense;
+                final amountColor = tx.isTransfer 
+                    ? Colors.blueAccent 
+                    : (isExpense ? Colors.redAccent : Colors.greenAccent);
+                final leadingSign = tx.isTransfer ? '' : (isExpense ? '-' : '+');
+
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  color: const Color(0xFF16162A), // Slightly lighter midnight tint
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    leading: CircleAvatar(
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                      child: Icon(
+                        tx.isTransfer 
+                            ? Icons.swap_horiz 
+                            : (isExpense ? Icons.call_made : Icons.call_received),
+                        color: amountColor,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      tx.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.top: 4.0),
+                      child: Text(
+                        '${tx.category.toUpperCase()} • ${DateFormat('dd MMM').format(tx.date)} • ${tx.account}',
+                        style: const TextStyle(color: Colors.white38, fontSize: 12),
+                      ),
+                    ),
+                    trailing: Text(
+                      '$leadingSign${tx.currency} ${tx.amount.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                        color: amountColor,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showModalBottomSheet(
           context: context,
