@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'transaction_model.dart';
+import 'currency_service.dart';
 
 final transactionProvider = StateNotifierProvider<TransactionNotifier, List<Transaction>>((ref) {
   return TransactionNotifier();
@@ -8,10 +9,15 @@ final transactionProvider = StateNotifierProvider<TransactionNotifier, List<Tran
 
 class TransactionNotifier extends StateNotifier<List<Transaction>> {
   TransactionNotifier() : super([]) {
-    _initHive();
+    _initHiveAndRates();
   }
 
   late Box<Transaction> _box;
+  final CurrencyService _currencyService = CurrencyService();
+  
+  // 🔥 THE MISSING VARIABLE EXPOSED CLEARLY FOR THE MODALS TO READ
+  Map<String, double> activeRates = CurrencyService.fallbackRates;
+
   final Map<String, double> categoryBudgets = {
     'Food': 8000.0,
     'Transport': 3000.0,
@@ -20,18 +26,19 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
     'Misc': 2000.0,
   };
 
-  Future<void> _initHive() async {
+  Future<void> _initHiveAndRates() async {
     _box = await Hive.openBox<Transaction>('transactions_box');
+    
+    // Fetch live market trends cleanly over the network wire
+    activeRates = await _currencyService.fetchLiveRates();
+    
     _loadAndProcess();
   }
 
   void _loadAndProcess() {
     final rawList = _box.values.toList();
-    // Sort transactions chronologically
     rawList.sort((a, b) => b.date.compareTo(a.date));
     state = rawList;
-    
-    // Process schedules cleanly after rendering current data state
     _processRecurringSchedules(rawList);
   }
 
@@ -54,7 +61,6 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
       if (tx.recurrence == 'None' || processedBaseTitles.contains(tx.title)) continue;
       processedBaseTitles.add(tx.title);
 
-      // Find when this transaction type was last executed
       DateTime lastTriggerDate = tx.date;
       for (var checkTx in currentTxs) {
         if (checkTx.title == tx.title && checkTx.date.isAfter(lastTriggerDate)) {
@@ -62,10 +68,8 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
         }
       }
 
-      // Project when the next billing date arrives
       DateTime nextDueDate = _calculateNextDate(lastTriggerDate, tx.recurrence);
 
-      // ONLY spawn past billing items if they have actually elapsed
       while (nextDueDate.isBefore(now)) {
         final uniqueId = '${tx.id}_spawn_${nextDueDate.year}_${nextDueDate.month}_${nextDueDate.day}';
         
