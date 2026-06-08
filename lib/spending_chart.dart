@@ -33,22 +33,15 @@ class SpendingChart extends StatelessWidget {
       'Misc': Colors.blueGrey,
     };
 
-    // Map aggregated values to fl_chart data structures
+    // Map aggregated values to fl_chart data structures without title text inside
     final List<PieChartSectionData> sections = categoryMap.entries.map((entry) {
-      final isSelected = false; // Expanded configurations can go here later
       final color = categoryColors[entry.key] ?? theme.colorScheme.primary;
-      final percentage = (entry.value / totalSpending) * 100;
 
       return PieChartSectionData(
         color: color,
         value: entry.value,
-        title: percentage > 10 ? '${percentage.toStringAsFixed(0)}%' : '',
-        radius: 22,
-        titleStyle: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: Colors.black,
-        ),
+        title: '', // Keep the ring clean
+        radius: 20,
       );
     }).toList();
 
@@ -57,36 +50,49 @@ class SpendingChart extends StatelessWidget {
       height: 140,
       child: Row(
         children: [
-          // Actual graphic ring
+          // Pure geometric ring canvas
           Expanded(
             flex: 4,
             child: PieChart(
               PieChartData(
                 sectionsSpace: 4,
-                centerSpaceRadius: 40,
+                centerSpaceRadius: 42,
                 sections: sections,
               ),
             ),
           ),
           
-          // Minimalist Legend Index labels
+          // Modern Legend Index with Inline Percentages
           Expanded(
             flex: 5,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: categoryMap.keys.map((cat) {
+                children: categoryMap.entries.map((entry) {
+                  final cat = entry.key;
+                  final amount = entry.value;
+                  final percentage = (amount / totalSpending) * 100;
                   final color = categoryColors[cat] ?? theme.colorScheme.primary;
+                  
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 3.0),
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
                     child: Row(
                       children: [
-                        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-                        const SizedBox(width: 8),
+                        Container(
+                          width: 8, 
+                          height: 8, 
+                          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                        ),
+                        const SizedBox(width: 10),
                         Text(
-                          cat.toUpperCase(),
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface.withOpacity(0.7), letterSpacing: 0.5),
+                          '${cat.toUpperCase()} (${percentage.toStringAsFixed(0)}%)',
+                          style: TextStyle(
+                            fontSize: 10, 
+                            fontWeight: FontWeight.bold, 
+                            color: theme.colorScheme.onSurface.withOpacity(0.7), 
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ],
                     ),
