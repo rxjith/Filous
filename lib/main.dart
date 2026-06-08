@@ -4,15 +4,13 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'transaction_model.dart';
 import 'budget_category_model.dart'; 
-import 'dashboard_screen.dart';       
+import 'dashboard_screen.dart'; // 🔥 This MUST match your file name exactly
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 1. Fire up local Hive subsystem 
   await Hive.initFlutter('test_db');
   
-  // 2. Register structural database adapters cleanly
   if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(TransactionAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(BudgetCategoryAdapter()); 
   
@@ -38,7 +36,6 @@ class FilousApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFF0F0F1A), 
       ),
-      // 🔥 FIXED: 'const' is completely removed here so it compiles perfectly!
       home: DashboardScreen(),
     );
   }
