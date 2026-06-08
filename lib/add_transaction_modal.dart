@@ -28,17 +28,14 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
   final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
 
-  // Static exchange multipliers relative to baseline baseline currency index values
-  final Map<String, double> _rates = {'INR': 1.0, 'USD': 83.50, 'EUR': 90.20, 'GBP': 106.10};
-
   void _submitData() {
     final enteredTitle = _titleController.text.trim();
     final enteredAmount = double.tryParse(_amountController.text) ?? 0.0;
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
 
-    // Fetch exchange rate to compute baseline valuation
-    double rateMultiplier = _rates[_selectedCurrency] ?? 1.0;
+    // 🔥 Pulling directly from the live network rates table managed by the provider
+    double rateMultiplier = ref.read(transactionProvider.notifier).activeRates[_selectedCurrency] ?? 1.0;
 
     final newTx = Transaction(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -57,6 +54,13 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
     ref.read(transactionProvider.notifier).saveTransaction(newTx);
     Navigator.of(context).pop();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    super.dispose();
   }
 
   @override
@@ -142,12 +146,14 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                     value: _selectedAccount,
                     decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'Source Account' : 'Wallet Account'),
                     items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
-                    onChanged: (val) => setState(() {
-                      _selectedAccount = val!;
-                      if (_selectedAccount == _selectedToAccount) {
-                        _selectedToAccount = _accounts.firstWhere((a) => a != _selectedAccount);
-                      }
-                    }),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedAccount = val!;
+                        if (_selectedAccount == _selectedToAccount) {
+                          _selectedToAccount = _accounts.firstWhere((a) => a != _selectedAccount);
+                        }
+                      });
+                    },
                   ),
                 ),
                 if (_isTransfer) ...[

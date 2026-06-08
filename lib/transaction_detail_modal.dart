@@ -31,8 +31,6 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
   final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
 
-  final Map<String, double> _rates = {'INR': 1.0, 'USD': 83.50, 'EUR': 90.20, 'GBP': 106.10};
-
   @override
   void initState() {
     super.initState();
@@ -60,7 +58,8 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
 
-    double rateMultiplier = _rates[_selectedCurrency] ?? 1.0;
+    // 🔥 Pulling directly from the live network rates table managed by the provider
+    double rateMultiplier = ref.read(transactionProvider.notifier).activeRates[_selectedCurrency] ?? 1.0;
 
     final updatedTx = Transaction(
       id: widget.transaction.id, 
@@ -237,8 +236,8 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                         decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'To Account'),
                         items: _accounts.where((a) => a != _selectedAccount).map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
                         onChanged: (val) => setState(() => _selectedToAccount = val!),
+                      ),
                     ),
-                  ),
                   ],
                 ],
               ),
@@ -290,7 +289,6 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   }
 }
 
-// Simple internal helper to bridge typo issues safely 
 class DiskListTile extends StatelessWidget {
   final Widget title;
   final Widget subtitle;
