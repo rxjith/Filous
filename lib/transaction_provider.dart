@@ -14,7 +14,7 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   }
 
   late Box<Transaction> _transactionBox;
-  late Box<BudgetCategory> _categoryBox;
+  Box<BudgetCategory>? _categoryBox; // Nullable to safely check initialization status
   final CurrencyService _currencyService = CurrencyService();
   
   Map<String, double> activeRates = CurrencyService.fallbackRates;
@@ -22,7 +22,13 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   // Dynamically exposed categories Map derived straight from Hive storage
   Map<String, double> get categoryBudgets {
     final Map<String, double> budgets = {};
-    for (var cat in _categoryBox.values) {
+    
+    // 🔥 Safety Check: If Hive is still waking up, return empty instead of crashing
+    if (_categoryBox == null || !_categoryBox!.isOpen) {
+      return budgets;
+    }
+
+    for (var cat in _categoryBox!.values) {
       budgets[cat.name] = cat.monthlyLimit;
     }
     return budgets;
@@ -33,7 +39,7 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
     _categoryBox = await Hive.openBox<BudgetCategory>('categories_box');
     
     // Seed standard baseline categories if the database box is completely fresh
-    if (_categoryBox.isEmpty) {
+    if (_categoryBox!.isEmpty) {
       final defaultLibrary = {
         'Food & Groceries': 8000.0,
         'Transport & Fuel': 3000.0,
@@ -47,7 +53,7 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
         'Misc': 2000.0,
       };
       for (var entry in defaultLibrary.entries) {
-        await _categoryBox.put(entry.key, BudgetCategory(name: entry.key, monthlyLimit: entry.value));
+        await _categoryBox!.put(entry.key, BudgetCategory(name: entry.key, monthlyLimit: entry.value));
       }
     }
 
@@ -64,12 +70,14 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   // --- Category Customization Controls ---
   
   void addOrUpdateCategory(String name, double limit) {
-    _categoryBox.put(name, BudgetCategory(name: name, monthlyLimit: limit));
+    if (_categoryBox == null || !_categoryBox!.isOpen) return;
+    _categoryBox!.put(name, BudgetCategory(name: name, monthlyLimit: limit));
     _loadAndProcess(); // Triggers UI state re-evaluation
   }
 
   void deleteCategory(String name) {
-    _categoryBox.delete(name);
+    if (_categoryBox == null || !_categoryBox!.isOpen) return;
+    _categoryBox!.delete(name);
     _loadAndProcess();
   }
 
