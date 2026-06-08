@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'transaction_model.dart';
-import 'budget_category_model.dart'; // 🔥 Import your brand new custom category schema
-import 'dashboard_screen.dart';       // Adjust this import path depending on where your main screen lives
+import 'budget_category_model.dart'; 
+import 'dashboard_screen.dart';       
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,8 +13,8 @@ void main() async {
   await Hive.initFlutter('test_db');
   
   // 2. Register structural database adapters cleanly
-  Hive.registerAdapter(TransactionAdapter());
-  Hive.registerAdapter(BudgetCategoryAdapter()); // 🔥 Essential: Tells Hive how to unpack your category limits
+  if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(TransactionAdapter());
+  if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(BudgetCategoryAdapter()); 
   
   runApp(
     const ProviderScope(
@@ -33,12 +33,12 @@ class FilousApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(useMaterial3: true).copyWith(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1), // Clean Indigo accent hue
+          seedColor: const Color(0xFF6366F1), 
           brightness: Brightness.dark,
         ),
-        scaffoldBackgroundColor: const Color(0xFF0F0F1A), // Sleek OLED midnight tone
+        scaffoldBackgroundColor: const Color(0xFF0F0F1A), 
       ),
-      home: const FilousApp(),
+      // 🔥 FIXED: 'const' is completely removed here so it compiles perfectly!
       home: DashboardScreen(),
     );
   }
