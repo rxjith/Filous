@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
 import 'transaction_detail_modal.dart';
+import 'add_transaction_modal.dart';
 
 // Universal utility helper to display currency symbols correctly
 String getCurrencySymbol(String currencyCode) {
@@ -44,6 +45,16 @@ class FilousApp extends StatelessWidget {
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
+  void _showAddPanel(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => const AddTransactionModal(),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactions = ref.watch(transactionProvider);
@@ -71,7 +82,7 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('FILOUS DASHBOARD', style: TextStyle(fontWeight: FontWeight.black, letterSpacing: 1.5)),
+        title: const Text('FILOUS DASHBOARD', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         centerTitle: true,
       ),
       body: Padding(
@@ -116,7 +127,6 @@ class DashboardScreen extends ConsumerWidget {
 
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
-                style: BoxConstraints(maxWidth: double.infinity),
                 child: Column(
                   children: [
                     Row(
@@ -166,7 +176,7 @@ class DashboardScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 15,
-                                  color: tx.isTransfer ? Colors.blueWithOpacity(0.8) : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
+                                  color: tx.isTransfer ? Colors.blue.withOpacity(0.8) : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
                                 ),
                               ),
                               IconButton(
@@ -186,6 +196,14 @@ class DashboardScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddPanel(context),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+        elevation: 0,
+        label: const Text('Log Transaction', style: TextStyle(fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add),
       ),
     );
   }
