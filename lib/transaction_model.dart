@@ -1,6 +1,5 @@
 import 'package:hive/hive.dart';
 
-// tells Hive to look for an auto generated binary adapter file
 part 'transaction_model.g.dart'; 
 
 @HiveType(typeId: 0)
@@ -18,10 +17,13 @@ class Transaction extends HiveObject {
   final DateTime date;
 
   @HiveField(4)
-  final String category; // e.g., 'Food', 'Transport', 'Rent'
+  final String category;
 
   @HiveField(5)
-  final bool isExpense; // true for expenses, false for income
+  final bool isExpense;
+
+  @HiveField(6)
+  final String account; // 🔥 NEW: 'Cash', 'Bank', or 'Credit'
 
   Transaction({
     required this.id,
@@ -30,5 +32,6 @@ class Transaction extends HiveObject {
     required this.date,
     required this.category,
     required this.isExpense,
+    required this.account,
   });
 }

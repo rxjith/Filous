@@ -15,8 +15,10 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   final _amountController = TextEditingController();
   bool _isExpense = true;
   String _selectedCategory = 'Food';
+  String _selectedAccount = 'Cash'; // Default selection
 
-  final List<String> _categories = ['Food', 'Transport', 'Leisure', 'Subscriptions', 'Salary', 'Misc'];
+  final List<String> _categories = ['Food', 'Transport', 'Leisure', 'Subscriptions', 'Misc'];
+  final List<String> _accounts = ['Cash', 'Bank', 'Credit'];
 
   void _submitData() {
     final enteredTitle = _titleController.text.trim();
@@ -31,6 +33,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       date: DateTime.now(),
       category: _selectedCategory,
       isExpense: _isExpense,
+      account: _selectedAccount,
     );
 
     ref.read(transactionProvider.notifier).addTransaction(newTx);
@@ -51,14 +54,14 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('NEW ENTRY', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.onSurface.withOpacity(0.6))),
+            Text('NEW CASHEW-STYLE ENTRY', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.onSurface.withOpacity(0.6))),
             const SizedBox(height: 16),
             
             Row(
               children: [
                 Expanded(
                   child: ChoiceChip(
-                    label: const Center(child: Text('Expense', style: TextStyle(fontWeight: FontWeight.bold))),
+                    label: const Center(child: Text('Expense')),
                     selected: _isExpense,
                     onSelected: (val) => setState(() => _isExpense = true),
                   ),
@@ -66,7 +69,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ChoiceChip(
-                    label: const Center(child: Text('Income', style: TextStyle(fontWeight: FontWeight.bold))),
+                    label: const Center(child: Text('Income')),
                     selected: !_isExpense,
                     onSelected: (val) => setState(() => _isExpense = false),
                   ),
@@ -76,7 +79,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             const SizedBox(height: 16),
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Description / Store', border: OutlineInputBorder()),
+              decoration: const InputDecoration(labelText: 'Store / Source', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -86,11 +89,28 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             ),
             const SizedBox(height: 16),
             
-            DropdownButtonFormField<String>(
-              value: _selectedCategory,
-              decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Category'),
-              items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-              onChanged: (val) => setState(() => _selectedCategory = val!),
+            Row(
+              children: [
+                // Category Picker
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Category'),
+                    items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                    onChanged: (val) => setState(() => _selectedCategory = val!),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Account Picker
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedAccount,
+                    decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Wallet/Account'),
+                    items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
+                    onChanged: (val) => setState(() => _selectedAccount = val!),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             
