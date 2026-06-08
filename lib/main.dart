@@ -1,3 +1,4 @@
+import 'dart:io'; // Required for path overriding
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,11 +13,19 @@ void main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(TransactionAdapter());
   
-  // 1. Open the box
-  final box = await Hive.openBox<Transaction>('filous_transactions');
-  
-  // 2. Clear out the old incompatible local data to stop the crash
-  await box.clear();
+  // 1. Force a localized sandbox directory inside the project workspace to prevent system cache crashes
+  final testDir = Directory('${Directory.current.path}/test_db');
+  if (await testDir.exists()) {
+    try {
+      await testDir.delete(recursive: true);
+    } catch (e) {
+      // Catch file system locks gracefully if any
+    }
+  }
+  Hive.init(testDir.path); 
+
+  // 2. Open the clean box instance safely
+  await Hive.openBox<Transaction>('filous_transactions');
 
   runApp(const ProviderScope(child: FilousApp()));
 }
@@ -108,7 +117,7 @@ class FilousDashboard extends ConsumerWidget {
               ),
               const SizedBox(height: 24),
 
-              // Visual Analytics
+              // Visual Analytics Ring
               SpendingChart(transactions: transactions),
               const SizedBox(height: 16),
 
@@ -120,7 +129,7 @@ class FilousDashboard extends ConsumerWidget {
                 final limit = budget.value;
                 final spent = notifier.getCategorySpending(category);
                 double percent = spent / limit;
-                if (percent > 1.0) percent = 1.0; // Cap visual scale bar at 100%
+                if (percent > 1.0) percent = 1.0; 
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6.0),
