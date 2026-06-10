@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'manage_categories_modal.dart'; 
 import 'add_transaction_page.dart';   // 🛠️ Changed import from modal to the new full-screen page
+import 'settings_page.dart';
 import 'transaction_detail_modal.dart';
 import 'transaction_provider.dart';
 import 'spending_chart.dart';
@@ -14,6 +15,81 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final transactions = ref.watch(transactionProvider);
+    final budgets = ref.watch(transactionProvider.notifier).categoryBudgets;
+    final now = DateTime.now();
+    final monthlyExpenses = transactions.where((tx) {
+      return tx.isExpense &&
+          tx.date.year == now.year &&
+          tx.date.month == now.month;
+    }).toList();
+
+    final totalBudget = budgets.values.fold<double>(0, (sum, limit) => sum + limit);
+    final totalSpent = monthlyExpenses.fold<double>(0, (sum, tx) => sum + tx.baseAmount);
+    final remainingBudget = totalBudget > totalSpent ? totalBudget - totalSpent : 0.0;
+    final budgetProgress = totalBudget == 0 ? 0.0 : (totalSpent / totalBudget).clamp(0.0, 1.0);
+    final budgetCard = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceVariant.withOpacity(0.18),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'MONTHLY BUDGET',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+                color: theme.colorScheme.onSurface.withOpacity(0.45),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              totalBudget == 0
+                  ? 'Set category budgets to track what remains'
+                  : '₹${remainingBudget.toStringAsFixed(0)} left this month',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: totalBudget == 0
+                    ? theme.colorScheme.onSurface.withOpacity(0.75)
+                    : (remainingBudget == 0
+                        ? Colors.redAccent
+                        : theme.colorScheme.primary),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                minHeight: 10,
+                value: budgetProgress,
+                backgroundColor: Colors.white.withOpacity(0.08),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  budgetProgress >= 1 ? Colors.redAccent : Colors.greenAccent,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              totalBudget == 0
+                  ? 'No monthly limits configured yet.'
+                  : 'Spent ₹${totalSpent.toStringAsFixed(0)} of ₹${totalBudget.toStringAsFixed(0)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withOpacity(0.65),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -29,6 +105,16 @@ class DashboardScreen extends ConsumerWidget {
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, size: 24),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
@@ -48,27 +134,35 @@ class DashboardScreen extends ConsumerWidget {
         ],
       ),
       body: transactions.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.account_balance_wallet_outlined, size: 64, color: theme.colorScheme.primary.withOpacity(0.4)),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'No transactions logged yet!',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white70),
+          ? Column(
+              children: [
+                budgetCard,
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.account_balance_wallet_outlined, size: 64, color: theme.colorScheme.primary.withOpacity(0.4)),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No transactions logged yet!',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white70),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tap the + button below to log an entry.',
+                          style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tap the + button below to log an entry.',
-                    style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.5)),
-                  ),
-                ],
-              ),
+                ),
+              ],
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                budgetCard,
                 SpendingChart(transactions: transactions),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),

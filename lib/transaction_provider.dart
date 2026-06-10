@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
+import 'package:another_telephony/telephony.dart';
 import 'transaction_model.dart';
 import 'budget_category_model.dart';
 import 'currency_service.dart';
+import 'sms_transaction_parser.dart';
 
 final transactionProvider = StateNotifierProvider<TransactionNotifier, List<Transaction>>((ref) {
   return TransactionNotifier();
@@ -193,6 +195,16 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
     );
 
     _transactionBox.put(finalTx.id, finalTx);
+    _loadAndProcess();
+  }
+
+  void ingestIncomingSms(SmsMessage message) {
+    final parsedTransaction = SmsTransactionParser.parseIncomingMessage(message);
+    if (parsedTransaction == null) return;
+    saveTransaction(parsedTransaction);
+  }
+
+  void reloadFromStorage() {
     _loadAndProcess();
   }
 

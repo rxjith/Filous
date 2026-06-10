@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:another_telephony/telephony.dart'; // Modern Android compatible fork
 
+import 'backup_service.dart';
 import 'transaction_model.dart';
 import 'budget_category_model.dart'; 
 import 'dashboard_screen.dart'; 
+import 'transaction_provider.dart';
+import 'sms_transaction_parser.dart';
+import 'sms_permission_page.dart';
 
 /// 🔥 Top-level global function required to capture SMS events 
 /// when the app is completely closed or running in the background.
@@ -19,10 +24,11 @@ void backgroundMessageHandler(SmsMessage message) async {
   if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(TransactionAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(BudgetCategoryAdapter());
   
-  final box = await Hive.openBox<Transaction>('transactions');
-  
-  // TODO: Run your transaction parsing regex engine logic directly here
-  // Example: final tx = parseSms(message.body); if (tx != null) box.add(tx);
+  final box = await Hive.openBox<Transaction>('transactions_box');
+  final parsedTransaction = SmsTransactionParser.parseIncomingMessage(message);
+  if (parsedTransaction == null) return;
+
+  box.put(parsedTransaction.id, parsedTransaction);
 }
 
 void main() async {
@@ -32,6 +38,7 @@ void main() async {
   await Hive.initFlutter('test_db');
   if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(TransactionAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(BudgetCategoryAdapter()); 
+  await Hive.openBox('app_settings');
 
   runApp(
     const ProviderScope(
@@ -40,34 +47,130 @@ void main() async {
   );
 }
 
-class FilousApp extends StatefulWidget {
+class FilousApp extends ConsumerStatefulWidget {
   const FilousApp({super.key});
 
   @override
-  State<FilousApp> createState() => _FilousAppState();
+  ConsumerState<FilousApp> createState() => _FilousAppState();
 }
 
-class _FilousAppState extends State<FilousApp> {
+class _FilousAppState extends ConsumerState<FilousApp>
+    with WidgetsBindingObserver {
+  static const String _hasSeenSmsPermissionExplainerKey =
+      'has_seen_sms_permission_explainer';
+  static const String _smsAutoLoggingEnabledKey = 'sms_auto_logging_enabled';
+
   final Telephony telephony = Telephony.instance;
+  late final Box _settingsBox;
+  bool _isBootstrapping = true;
+  bool _showSmsPermissionExplainer = false;
+  bool _listenerStarted = false;
 
   @override
   void initState() {
     super.initState();
-    _initIncomingSmsListener();
+    WidgetsBinding.instance.addObserver(this);
+    _settingsBox = Hive.box('app_settings');
+    _bootstrapSmsFlow();
   }
 
-  /// Hook up the system message listener streams
-  void _initIncomingSmsListener() {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _bootstrapSmsFlow() async {
+    final hasSeenExplainer =
+        _settingsBox.get(_hasSeenSmsPermissionExplainerKey, defaultValue: false) as bool;
+    final smsAutoLoggingEnabled =
+        _settingsBox.get(_smsAutoLoggingEnabledKey, defaultValue: false) as bool;
+
+    if (!hasSeenExplainer) {
+      if (!mounted) return;
+      setState(() {
+        _isBootstrapping = false;
+        _showSmsPermissionExplainer = true;
+      });
+      return;
+    }
+
+    if (smsAutoLoggingEnabled) {
+      await _requestSmsPermissionAndStartListening(markExplainerSeen: false);
+    }
+
+    try {
+      await BackupService.runScheduledBackupIfDue();
+    } catch (error) {
+      debugPrint('Scheduled backup skipped: $error');
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _isBootstrapping = false;
+      _showSmsPermissionExplainer = false;
+    });
+  }
+
+  Future<void> _requestSmsPermissionAndStartListening({
+    required bool markExplainerSeen,
+  }) async {
+    if (markExplainerSeen) {
+      await _settingsBox.put(_hasSeenSmsPermissionExplainerKey, true);
+    }
+
+    final permissionGranted = await telephony.requestPhoneAndSmsPermissions;
+    if (permissionGranted != true) {
+      await _settingsBox.put(_smsAutoLoggingEnabledKey, false);
+      debugPrint('SMS permissions were denied; auto logging is disabled.');
+      return;
+    }
+
+    await _settingsBox.put(_smsAutoLoggingEnabledKey, true);
+    _startIncomingSmsListener();
+  }
+
+  void _startIncomingSmsListener() {
+    if (_listenerStarted) return;
+    _listenerStarted = true;
+
     telephony.listenIncomingSms(
-      // Triggered when a message arrives while you are looking at the app
       onNewMessage: (SmsMessage message) {
         debugPrint("⚡ Foreground SMS Intercepted: ${message.body}");
-        
-        // Feed the message content straight into your Riverpod state notifier channel
-        // context.read(transactionProvider.notifier).parseIncomingSMS(message.body);
+        ref.read(transactionProvider.notifier).ingestIncomingSms(message);
       },
       onBackgroundMessage: backgroundMessageHandler,
     );
+  }
+
+  Future<void> _handleSmsPermissionAccepted() async {
+    await _requestSmsPermissionAndStartListening(markExplainerSeen: true);
+    if (!mounted) return;
+
+    setState(() {
+      _isBootstrapping = false;
+      _showSmsPermissionExplainer = false;
+    });
+  }
+
+  Future<void> _handleSmsPermissionSkipped() async {
+    await _settingsBox.put(_hasSeenSmsPermissionExplainerKey, true);
+    await _settingsBox.put(_smsAutoLoggingEnabledKey, false);
+    if (!mounted) return;
+
+    setState(() {
+      _isBootstrapping = false;
+      _showSmsPermissionExplainer = false;
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      BackupService.runScheduledBackupIfDue().catchError((error) {
+        debugPrint('Scheduled backup skipped on resume: $error');
+      });
+    }
   }
 
   @override
@@ -82,7 +185,18 @@ class _FilousAppState extends State<FilousApp> {
         ),
         scaffoldBackgroundColor: const Color(0xFF0F0F1A), 
       ),
-      home: const DashboardScreen(),
+      home: _isBootstrapping
+          ? const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            )
+          : _showSmsPermissionExplainer
+              ? SmsPermissionPage(
+                  onAllow: _handleSmsPermissionAccepted,
+                  onSkip: _handleSmsPermissionSkipped,
+                )
+              : const DashboardScreen(),
     );
   }
 }

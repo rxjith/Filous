@@ -88,6 +88,8 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final useCompactLayout = screenWidth < 420;
     
     // 1. Fetch real-time live envelopes configuration from Hive
     final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
@@ -249,34 +251,67 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                 },
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      controller: _amountController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Amount Balance', border: OutlineInputBorder()),
-                    ),
+              if (useCompactLayout) ...[
+                TextField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Amount Balance',
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedCurrency,
-                      decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Currency'),
-                      items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(cur))).toList(),
-                      onChanged: (val) => setState(() => _selectedCurrency = val!),
-                    ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _selectedCurrency,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Currency',
                   ),
-                ],
-              ),
+                  items: _currencies
+                      .map((cur) => DropdownMenuItem(value: cur, child: Text(cur)))
+                      .toList(),
+                  onChanged: (val) => setState(() => _selectedCurrency = val!),
+                ),
+              ] else
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Amount Balance',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCurrency,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Currency',
+                        ),
+                        items: _currencies
+                            .map((cur) => DropdownMenuItem(value: cur, child: Text(cur)))
+                            .toList(),
+                        onChanged: (val) => setState(() => _selectedCurrency = val!),
+                      ),
+                    ),
+                  ],
+                ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _selectedAccount,
+                      isExpanded: true,
                       decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'From Account' : 'Account Source'),
                       items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
                       onChanged: (val) {
@@ -296,6 +331,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: _selectedToAccount,
+                        isExpanded: true,
                         decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'To Account'),
                         // Safely filter choice list matching constraints
                         items: _accounts.where((a) => a != _selectedAccount).map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
@@ -306,32 +342,72 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                 ],
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  if (!_isTransfer) ...[
+              if (!_isTransfer && useCompactLayout) ...[
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Envelope',
+                  ),
+                  items: activeCategories.isEmpty
+                      ? [const DropdownMenuItem(value: 'Misc', child: Text('Misc'))]
+                      : activeCategories
+                          .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                          .toList(),
+                  onChanged: (val) => setState(() => _selectedCategory = val),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _selectedRecurrence,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Recurrence',
+                  ),
+                  items: _recurrences
+                      .map((rec) => DropdownMenuItem(value: rec, child: Text(rec)))
+                      .toList(),
+                  onChanged: (val) => setState(() => _selectedRecurrence = val!),
+                ),
+              ] else
+                Row(
+                  children: [
+                    if (!_isTransfer) ...[
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedCategory,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Envelope',
+                          ),
+                          items: activeCategories.isEmpty
+                              ? [const DropdownMenuItem(value: 'Misc', child: Text('Misc'))]
+                              : activeCategories
+                                  .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                                  .toList(),
+                          onChanged: (val) => setState(() => _selectedCategory = val),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedCategory,
-                        decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Envelope'),
-                        // Fallback UI block if the active categories collection hits 0 elements
-                        items: activeCategories.isEmpty 
-                            ? [const DropdownMenuItem(value: 'Misc', child: Text('Misc'))]
-                            : activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-                        onChanged: (val) => setState(() => _selectedCategory = val),
+                        value: _selectedRecurrence,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Recurrence',
+                        ),
+                        items: _recurrences
+                            .map((rec) => DropdownMenuItem(value: rec, child: Text(rec)))
+                            .toList(),
+                        onChanged: (val) => setState(() => _selectedRecurrence = val!),
                       ),
                     ),
-                    const SizedBox(width: 12),
                   ],
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedRecurrence,
-                      decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Recurrence'),
-                      items: _recurrences.map((rec) => DropdownMenuItem(value: rec, child: Text(rec))).toList(),
-                      onChanged: (val) => setState(() => _selectedRecurrence = val!),
-                    ),
-                  ),
-                ],
-              ),
+                ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,

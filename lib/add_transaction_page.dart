@@ -76,7 +76,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     );
 
     ref.read(transactionProvider.notifier).saveTransaction(newTx);
-    Navigator.of(context).pop(); // Safely pops the full page route off the stack
+    Navigator.of(context).pop(); 
   }
 
   @override
@@ -89,6 +89,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final useCompactLayout = screenWidth < 420;
     final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
 
     if (_selectedCategory == null || !activeCategories.contains(_selectedCategory)) {
@@ -96,7 +98,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     }
 
     return Scaffold(
-      // 🛠️ Full page architecture with matching theme styles
+      // 🛠️ THE CRITICAL ULTIMATE FIX: Stops the keyboard frame from shrinking the viewport space
+      resizeToAvoidBottomInset: false, 
       appBar: AppBar(
         title: Text(
           'LOG NEW TRANSACTION', 
@@ -108,7 +111,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           )
         ),
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: theme.scaffoldBackgroundColor,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -116,8 +119,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -147,13 +152,13 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               InkWell(
                 onTap: _presentDatePicker,
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(border: Border.all(color: Colors.white24), borderRadius: BorderRadius.circular(8)),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -173,11 +178,15 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               TextField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Description / Payee Name', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Description / Payee Name', 
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
                 onChanged: (textValue) {
                   if (!_isTransfer) {
                     final guessed = ref.read(transactionProvider.notifier).guessCategory(textValue);
@@ -187,38 +196,75 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   }
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      controller: _amountController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Amount', border: OutlineInputBorder()),
-                    ),
+              if (useCompactLayout) ...[
+                TextField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Amount', 
+                    border: OutlineInputBorder(),
+                    isDense: true,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedCurrency,
-                      decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Currency'),
-                      items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(cur))).toList(),
-                      onChanged: (val) => setState(() => _selectedCurrency = val!),
-                    ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _selectedCurrency,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(), 
+                    labelText: 'Currency',
+                    isDense: true,
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
+                  items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(cur))).toList(),
+                  onChanged: (val) => setState(() => _selectedCurrency = val!),
+                ),
+              ] else
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Amount', 
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCurrency,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(), 
+                          labelText: 'Currency',
+                          isDense: true,
+                        ),
+                        items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(cur))).toList(),
+                        onChanged: (val) => setState(() => _selectedCurrency = val!),
+                      ),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 16),
               
               Row(
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: _selectedAccount,
-                      decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'Source Account' : 'Wallet Account'),
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(), 
+                        labelText: _isTransfer ? 'Source Account' : 'Wallet Account',
+                        isDense: true,
+                      ),
                       items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
                       onChanged: (val) {
                         setState(() {
@@ -235,7 +281,12 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: _selectedToAccount,
-                        decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Destination Account'),
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(), 
+                          labelText: 'Destination Account',
+                          isDense: true,
+                        ),
                         items: _accounts.where((a) => a != _selectedAccount).map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
                         onChanged: (val) => setState(() => _selectedToAccount = val!),
                       ),
@@ -243,36 +294,71 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   ],
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  if (!_isTransfer) ...[
+              if (!_isTransfer && useCompactLayout) ...[
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(), 
+                    labelText: 'Envelope Category',
+                    isDense: true,
+                  ),
+                  items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                  onChanged: (val) => setState(() => _selectedCategory = val),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _selectedRecurrence,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(), 
+                    labelText: 'Recurrence Rule',
+                    isDense: true,
+                  ),
+                  items: _recurrences.map((rec) => DropdownMenuItem(value: rec, child: Text(rec))).toList(),
+                  onChanged: (val) => setState(() => _selectedRecurrence = val!),
+                ),
+              ] else
+                Row(
+                  children: [
+                    if (!_isTransfer) ...[
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedCategory,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(), 
+                            labelText: 'Envelope Category',
+                            isDense: true,
+                          ),
+                          items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                          onChanged: (val) => setState(() => _selectedCategory = val),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedCategory,
-                        decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Envelope Category'),
-                        items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-                        onChanged: (val) => setState(() => _selectedCategory = val),
+                        value: _selectedRecurrence,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(), 
+                          labelText: 'Recurrence Rule',
+                          isDense: true,
+                        ),
+                        items: _recurrences.map((rec) => DropdownMenuItem(value: rec, child: Text(rec))).toList(),
+                        onChanged: (val) => setState(() => _selectedRecurrence = val!),
                       ),
                     ),
-                    const SizedBox(width: 12),
                   ],
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedRecurrence,
-                      decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Recurrence Rule'),
-                      items: _recurrences.map((rec) => DropdownMenuItem(value: rec, child: Text(rec))).toList(),
-                      onChanged: (val) => setState(() => _selectedRecurrence = val!),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
+                ),
+              const SizedBox(height: 24),
               
               SizedBox(
                 width: double.infinity,
-                height: 54,
+                height: 50,
                 child: ElevatedButton(
                   onPressed: _submitData,
                   style: ElevatedButton.styleFrom(
@@ -284,7 +370,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   child: const Text('Commit Entry Log', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
             ],
           ),
         ),
