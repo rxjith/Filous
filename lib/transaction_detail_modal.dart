@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
 
@@ -16,10 +17,11 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   late TextEditingController _titleController;
   late TextEditingController _amountController;
   
+  // State variables tracking configuration flags
   late bool _isExpense;
   late bool _isTransfer;
   
-  late String _selectedCategory;
+  String? _selectedCategory; 
   late String _selectedAccount;
   late String _selectedToAccount;
   late String _selectedRecurrence;
@@ -39,7 +41,11 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
     _isTransfer = widget.transaction.isTransfer;
     _selectedCategory = widget.transaction.category;
     _selectedAccount = widget.transaction.account;
-    _selectedToAccount = widget.transaction.toAccount ?? 'Bank';
+    
+    // Safety check: ensure 'To Account' doesn't accidentally initialize identical to source account
+    _selectedToAccount = widget.transaction.toAccount ?? 
+        (_selectedAccount == 'Bank' ? 'Credit' : 'Bank');
+        
     _selectedRecurrence = widget.transaction.recurrence;
     _selectedCurrency = widget.transaction.currency;
   }
@@ -57,6 +63,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
 
+    // Retrieve active exchange rates straight from structural provider memory
     double rateMultiplier = ref.read(transactionProvider.notifier).activeRates[_selectedCurrency] ?? 1.0;
 
     final updatedTx = Transaction(
@@ -64,7 +71,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
       title: enteredTitle,
       amount: enteredAmount,
       date: widget.transaction.date, 
-      category: _isTransfer ? 'Transfer' : _selectedCategory,
+      category: _isTransfer ? 'Transfer' : (_selectedCategory ?? 'Misc'),
       account: _selectedAccount,
       isExpense: _isTransfer ? false : _isExpense,
       isTransfer: _isTransfer,
@@ -82,12 +89,19 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    // 🔥 Dynamic category lookup from Hive to replace hardcoded values and avoid app crashes
+    // 1. Fetch real-time live envelopes configuration from Hive
     final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
 
-    // Fallback alignment filter to keep the dropdown selected state safe
-    if (!activeCategories.contains(_selectedCategory) && !_isTransfer) {
-      _selectedCategory = activeCategories.isNotEmpty ? activeCategories.first : 'Misc';
+    // 2. 🔥 CRITICAL SAFETY FIXED: Safe-fallback evaluation for dynamic categories.
+    // If the category was deleted or is missing, gracefully realign dropdown to prevent standard assertion failures.
+    if (!_isTransfer && (_selectedCategory == null || !activeCategories.contains(_selectedCategory))) {
+      if (activeCategories.contains('Misc')) {
+        _selectedCategory = 'Misc';
+      } else if (activeCategories.isNotEmpty) {
+        _selectedCategory = activeCategories.first;
+      } else {
+        _selectedCategory = null; 
+      }
     }
 
     return Padding(
@@ -100,12 +114,17 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Head Section Panel Layout
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   _isEditing ? 'MODIFY ENTRIES' : 'LEDGER METADATA', 
-                  style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: theme.colorScheme.primary),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900, 
+                    letterSpacing: 1.2, 
+                    color: theme.colorScheme.primary
+                  ),
                 ),
                 IconButton(
                   icon: Icon(_isEditing ? Icons.close : Icons.edit_note, color: theme.colorScheme.primary),
@@ -115,6 +134,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
             ),
             const SizedBox(height: 16),
             
+            // --- READ ONLY PRESENTATION STACK ---
             if (!_isEditing) ...[
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -129,7 +149,14 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                       title: const Text('Value Amount', style: TextStyle(fontSize: 11, color: Colors.white38)),
                       subtitle: Text(
                         '$_selectedCurrency ${widget.transaction.amount.toStringAsFixed(0)}', 
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: _isTransfer ? Colors.blueAccent : (_isExpense ? Colors.redAccent : Colors.greenAccent)),
+                        style: TextStyle(
+                          fontSize: 18, 
+                          fontWeight: FontWeight.w900, 
+                          // High-contrast, easy-on-the-eyes color distribution
+                          color: _isTransfer 
+                              ? Colors.amberAccent 
+                              : (_isExpense ? Colors.redAccent : Colors.greenAccent)
+                        ),
                       ),
                     ),
                   ),
@@ -137,7 +164,10 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Flow Strategy', style: TextStyle(fontSize: 11, color: Colors.white38)),
-                      subtitle: Text(_isTransfer ? 'Transfer 🔄' : (_isExpense ? 'Expense 🛑' : 'Income 💰'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      subtitle: Text(
+                        _isTransfer ? 'Transfer 🔄' : (_isExpense ? 'Expense 🛑' : 'Income 💰'), 
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                      ),
                     ),
                   ),
                 ],
@@ -155,7 +185,10 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(_isTransfer ? 'Credited Account' : 'Budget Envelope', style: const TextStyle(fontSize: 11, color: Colors.white38)),
-                      subtitle: Text(_isTransfer ? (widget.transaction.toAccount ?? 'None') : widget.transaction.category, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      subtitle: Text(
+                        _isTransfer ? (widget.transaction.toAccount ?? 'None') : widget.transaction.category, 
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                      ),
                     ),
                   ),
                 ],
@@ -167,13 +200,17 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                   subtitle: Text('₹${widget.transaction.baseAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
                 ),
               const SizedBox(height: 24),
-            ] else ...[
+            ] 
+            
+            // --- EDITABLE INTERACTIVE FORM STACK ---
+            else ...[
               Row(
                 children: [
                   Expanded(
                     child: ChoiceChip(
                       label: const Center(child: Text('Expense')),
                       selected: _isExpense && !_isTransfer,
+                      selectedColor: Colors.redAccent.withOpacity(0.2),
                       onSelected: (val) => setState(() { _isExpense = true; _isTransfer = false; }),
                     ),
                   ),
@@ -182,6 +219,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                     child: ChoiceChip(
                       label: const Center(child: Text('Income')),
                       selected: !_isExpense && !_isTransfer,
+                      selectedColor: Colors.greenAccent.withOpacity(0.2),
                       onSelected: (val) => setState(() { _isExpense = false; _isTransfer = false; }),
                     ),
                   ),
@@ -190,6 +228,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                     child: ChoiceChip(
                       label: const Center(child: Text('Transfer')),
                       selected: _isTransfer,
+                      selectedColor: Colors.amberAccent.withOpacity(0.2),
                       onSelected: (val) => setState(() { _isTransfer = true; }),
                     ),
                   ),
@@ -199,7 +238,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
               TextField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Payee Descriptor', border: OutlineInputBorder()),
-                // 🔥 Live Guessing Engine for Edit flow
+                // Integrated background auto-guessing engine connection rule
                 onChanged: (textValue) {
                   if (!_isTransfer) {
                     final guessed = ref.read(transactionProvider.notifier).guessCategory(textValue);
@@ -240,7 +279,16 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                       value: _selectedAccount,
                       decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'From Account' : 'Account Source'),
                       items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
-                      onChanged: (val) => setState(() => _selectedAccount = val!),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedAccount = val!;
+                          // 🔥 CRITICAL FIXED: If source and destination match, cascade shift selection 
+                          // to prevent standard AssertionError menu validation crashes
+                          if (_selectedAccount == _selectedToAccount) {
+                            _selectedToAccount = _accounts.firstWhere((a) => a != _selectedAccount);
+                          }
+                        });
+                      },
                     ),
                   ),
                   if (_isTransfer) ...[
@@ -249,6 +297,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                       child: DropdownButtonFormField<String>(
                         value: _selectedToAccount,
                         decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'To Account'),
+                        // Safely filter choice list matching constraints
                         items: _accounts.where((a) => a != _selectedAccount).map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
                         onChanged: (val) => setState(() => _selectedToAccount = val!),
                       ),
@@ -263,10 +312,12 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: _selectedCategory,
-                        decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Category'),
-                        // 🔥 Dynamic drop elements linked straight to database array state
-                        items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
-                        onChanged: (val) => setState(() => _selectedCategory = val!),
+                        decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Envelope'),
+                        // Fallback UI block if the active categories collection hits 0 elements
+                        items: activeCategories.isEmpty 
+                            ? [const DropdownMenuItem(value: 'Misc', child: Text('Misc'))]
+                            : activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                        onChanged: (val) => setState(() => _selectedCategory = val),
                       ),
                     ),
                     const SizedBox(width: 12),
