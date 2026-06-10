@@ -3,52 +3,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'manage_categories_modal.dart'; 
 import 'add_transaction_modal.dart';   
-import 'transaction_detail_modal.dart'; // 🔥 Pull in the detail/edit controller panel
-import 'transaction_provider.dart';   
-import 'transaction_model.dart';
-import 'spending_chart.dart'; 
+import 'transaction_detail_modal.dart';
+import 'transaction_provider.dart';
+import 'spending_chart.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
-  /// Helper utility to turn transaction date values into smart relative/monthly Section Headers
-  String _getGroupHeader(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final txDate = DateTime(date.year, date.month, date.day);
-
-    if (txDate == today) {
-      return 'TODAY';
-    } else if (txDate == yesterday) {
-      return 'YESTERDAY';
-    } else if (now.difference(txDate).inDays < 7) {
-      return DateFormat('EEEE, dd MMMM').format(date).toUpperCase();
-    } else {
-      return DateFormat('MMMM yyyy').format(date).toUpperCase();
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    
+    // 🔥 Watch the live stream of transactions from your StateNotifier provider
     final transactions = ref.watch(transactionProvider);
-
-    // Grouping pipeline logic
-    final Map<String, List<Transaction>> groupedTransactions = {};
-    for (var tx in transactions) {
-      final header = _getGroupHeader(tx.date);
-      if (groupedTransactions[header] == null) {
-        groupedTransactions[header] = [];
-      }
-      groupedTransactions[header]!.add(tx);
-    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'FILOUS DASHBOARD', 
-          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 20),
+          style: TextStyle(
+            fontWeight: FontWeight.w900, 
+            letterSpacing: 1.5,
+            fontSize: 20,
+          ),
         ),
         centerTitle: true,
         elevation: 0,
@@ -72,128 +49,148 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
+      // 🔥 Swapped out the static dummy text block for a reactive layout engine
       body: transactions.isEmpty
-          ? const Center(
-              child: Text(
-                'No transactions logged yet.\nTap + to start budgeting!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white38, height: 1.5),
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.account_balance_wallet_outlined, size: 64, color: theme.colorScheme.primary.withOpacity(0.4)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No transactions logged yet!',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white70),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap the + button below to log an entry.',
+                    style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                  ),
+                ],
               ),
             )
           : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 📊 1. Render the dynamic high-contrast pie chart panel up at the top
+                SpendingChart(transactions: transactions),
+                
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: SpendingChart(transactions: transactions),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                  child: Text(
+                    'RECENT TRANSACTIONS',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    ),
+                  ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Divider(color: Colors.white10),
-                ),
+                
+                // 📜 2. Scrollable stream displaying historical entries
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: groupedTransactions.length,
+                    itemCount: transactions.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, bottom: 80),
                     itemBuilder: (context, index) {
-                      final dateHeader = groupedTransactions.keys.elementAt(index);
-                      final dayTransactions = groupedTransactions[dateHeader]!;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 4.0),
-                            child: Text(
-                              dateHeader,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary.withOpacity(0.8),
-                                letterSpacing: 1.2,
+                      final tx = transactions[index];
+                      
+                      // 🛑 3. Swipe-To-Delete gesture wrapped natively onto the cards
+                      return Dismissible(
+                        key: Key(tx.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
+                        ),
+                        onDismissed: (direction) {
+                          ref.read(transactionProvider.notifier).deleteTransaction(tx.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Removed execution entry for "${tx.title}"'),
+                              backgroundColor: theme.colorScheme.surfaceVariant,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          elevation: 0,
+                          color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            // 🔍 4. Tap an item card to inspect/modify structural entries
+                            onTap: () => showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: theme.colorScheme.surface,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                              ),
+                              builder: (context) => TransactionDetailModal(transaction: tx),
+                            ),
+                            leading: CircleAvatar(
+                              backgroundColor: tx.isTransfer 
+                                  ? Colors.blueAccent.withOpacity(0.1) 
+                                  : (tx.isExpense ? Colors.redAccent.withOpacity(0.1) : Colors.greenAccent.withOpacity(0.1)),
+                              child: Icon(
+                                tx.isTransfer 
+                                    ? Icons.swap_horiz
+                                    : (tx.isExpense ? Icons.north_east : Icons.south_west),
+                                color: tx.isTransfer 
+                                    ? Colors.blueAccent 
+                                    : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
+                                size: 18,
                               ),
                             ),
-                          ),
-                          ...dayTransactions.map((tx) {
-                            final isExpense = tx.isExpense;
-                            final amountColor = tx.isTransfer 
-                                ? Colors.blueAccent 
-                                : (isExpense ? Colors.redAccent : Colors.greenAccent);
-                            final leadingSign = tx.isTransfer ? '' : (isExpense ? '-' : '+');
-
-                            // 🔥 SWIPE TO DELETE: Wraps each card inside a dismissible framework lane
-                            return Dismissible(
-                              key: Key(tx.id),
-                              direction: DismissDirection.endToStart, // Swipe left to clear
-                              background: Container(
-                                margin: const EdgeInsets.symmetric(vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
+                            title: Text(
+                              tx.title,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              '${tx.category} • ${DateFormat('dd MMM yyyy').format(tx.date)}',
+                              style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                            ),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '${tx.isExpense ? "-" : (tx.isTransfer ? "" : "+")} ${tx.currency} ${tx.amount.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14,
+                                    color: tx.isTransfer 
+                                        ? Colors.blueAccent 
+                                        : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
+                                  ),
                                 ),
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 20),
-                                child: const Icon(Icons.delete_sweep, color: Colors.redAccent),
-                              ),
-                              onDismissed: (direction) {
-                                // Deletes item quietly directly out of local database storage box
-                                ref.read(transactionProvider.notifier).deleteTransaction(tx.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Removed "${tx.title}"'),
-                                    backgroundColor: const Color(0xFF16162A),
-                                  ),
-                                );
-                              },
-                              child: Card(
-                                margin: const EdgeInsets.symmetric(vertical: 4),
-                                color: const Color(0xFF16162A), 
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                  // 🔥 TAP TO EDIT: Launches management sheet directly targeting this model instance
-                                  onTap: () => showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    backgroundColor: theme.colorScheme.surface,
-                                    shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                    ),
-                                    builder: (context) => TransactionDetailModal(transaction: tx),
-                                  ),
-                                  leading: CircleAvatar(
-                                    backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-                                    child: Icon(
-                                      tx.isTransfer 
-                                          ? Icons.swap_horiz 
-                                          : (isExpense ? Icons.call_made : Icons.call_received),
-                                      color: amountColor,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  title: Text(
-                                    tx.title,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                  ),
-                                  subtitle: Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
+                                // Base currency evaluation readout if dealing with foreign metrics
+                                if (tx.currency != 'INR')
+                                  Padding(
+                                    padding: const EdgeInsets.topDelta(2),
                                     child: Text(
-                                      '${tx.category.toUpperCase()} • ${tx.account} • ${DateFormat('dd MMM').format(tx.date)}',
-                                      style: const TextStyle(color: Colors.white38, fontSize: 12),
+                                      '₹${tx.baseAmount.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        fontSize: 10, 
+                                        color: Colors.orangeAccent.withOpacity(0.8), 
+                                        fontWeight: FontWeight.bold
+                                      ),
                                     ),
                                   ),
-                                  trailing: Text(
-                                    '$leadingSign${tx.currency} ${tx.amount.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 15,
-                                      color: amountColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
+                              ],
+                            ),
+                          ),
+                        ),
                       );
                     },
                   ),

@@ -19,11 +19,11 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   
   Map<String, double> activeRates = CurrencyService.fallbackRates;
 
-  // Dynamically exposed categories Map derived straight from Hive storage
+  /// Dynamically exposed categories Map derived straight from Hive storage
   Map<String, double> get categoryBudgets {
     final Map<String, double> budgets = {};
     
-    // 🔥 Safety Check: If Hive is still waking up, return empty instead of crashing
+    // Safety Check: If Hive is still waking up, return empty instead of crashing
     if (_categoryBox == null || !_categoryBox!.isOpen) {
       return budgets;
     }
@@ -57,14 +57,16 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
       }
     }
 
+    // Fetch and load active cross-currency rates
     activeRates = await _currencyService.fetchLiveRates();
     _loadAndProcess();
   }
 
   void _loadAndProcess() {
     final rawList = _transactionBox.values.toList();
+    // Sort transactions descending by timeline execution
     rawList.sort((a, b) => b.date.compareTo(a.date));
-    state = rawList;
+    state = rawList; // Re-allocating the list triggers Riverpod listeners to rebuild UI
   }
 
   // --- 🔥 Automated Category Guessing Engine ---
@@ -73,7 +75,6 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   String guessCategory(String title) {
     final cleanTitle = title.toLowerCase().trim();
 
-    // Contextual matching keywords dictionary
     final Map<String, List<String>> keywordRules = {
       'Food & Groceries': [
         'swiggy', 'zomato', 'blinkit', 'zepto', 'instamart', 'bigbasket', 
@@ -116,12 +117,12 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
     for (var entry in keywordRules.entries) {
       for (var keyword in entry.value) {
         if (cleanTitle.contains(keyword)) {
-          return entry.key; // Found an explicit rule match!
+          return entry.key;
         }
       }
     }
 
-    return 'Misc'; // Fallback if it completely slips matching filters
+    return 'Misc';
   }
 
   // --- Category Customization Controls ---
@@ -129,38 +130,67 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   void addOrUpdateCategory(String name, double limit) {
     if (_categoryBox == null || !_categoryBox!.isOpen) return;
     _categoryBox!.put(name, BudgetCategory(name: name, monthlyLimit: limit));
-    _loadAndProcess(); // Triggers UI state re-evaluation
+    _loadAndProcess(); // Instantly triggers UI re-evaluation for listeners
   }
 
+  /// Removes a custom category and executes a cascading fallback strategy 
+  /// on existing transactions to protect data integrity.
   void deleteCategory(String name) {
     if (_categoryBox == null || !_categoryBox!.isOpen) return;
+    
+    // 1. Delete the category configuration asset row
     _categoryBox!.delete(name);
+    
+    // 2. 🔥 FIX: Cascade update records matching deleted envelopes to 'Misc'
+    // This prevents runtime chart rendering failure from orphaned categories
+    for (var tx in _transactionBox.values) {
+      if (tx.category == name) {
+        final fallbackTx = Transaction(
+          id: tx.id,
+          title: tx.title,
+          amount: tx.amount,
+          date: tx.date,
+          category: 'Misc', // Re-route to safe generic stack
+          account: tx.account,
+          isExpense: tx.isExpense,
+          isTransfer: tx.isTransfer,
+          toAccount: tx.toAccount,
+          recurrence: tx.recurrence,
+          currency: tx.currency,
+          exchangeRate: tx.exchangeRate,
+        );
+        _transactionBox.put(tx.id, fallbackTx);
+      }
+    }
     _loadAndProcess();
   }
 
   // --- Core Transaction Management ---
 
   void saveTransaction(Transaction tx) {
-    Transaction finalTx = tx;
+    // 1. Determine optimized categorization group
+    String finalCategory = tx.category.trim().isEmpty || tx.category == 'Misc'
+        ? guessCategory(tx.title)
+        : tx.category;
 
-    // 🔥 If the transaction is incoming with a blank category or labeled as 'Misc', 
-    // try to guess a much tighter categorization group based on its transaction name.
-    if (tx.category == 'Misc' || tx.category.isEmpty) {
-      final guessed = guessCategory(tx.title);
-      if (guessed != 'Misc') {
-        finalTx = Transaction(
-          id: tx.id,
-          title: tx.title,
-          amount: tx.amount,
-          date: tx.date,
-          category: guessed, // Injected suggestion slot
-          account: tx.account,
-          currency: tx.currency,
-          isExpense: tx.isExpense,
-          isTransfer: tx.isTransfer,
-        );
-      }
-    }
+    // 2. 🔥 FIX: Inject live matching exchange rate configuration values
+    // Previously, activeRates fetched from CurrencyService were never bound to transactions on save.
+    double matchingRate = activeRates[tx.currency] ?? 1.0;
+
+    final finalTx = Transaction(
+      id: tx.id,
+      title: tx.title,
+      amount: tx.amount,
+      date: tx.date,
+      category: finalCategory,
+      account: tx.account,
+      isExpense: tx.isExpense,
+      isTransfer: tx.isTransfer,
+      toAccount: tx.toAccount,
+      recurrence: tx.recurrence,
+      currency: tx.currency,
+      exchangeRate: matchingRate, // Bound dynamically to maintain reliable baseAmount conversions
+    );
 
     _transactionBox.put(finalTx.id, finalTx);
     _loadAndProcess();
