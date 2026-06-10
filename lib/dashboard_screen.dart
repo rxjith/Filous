@@ -14,7 +14,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     
-    // 🔥 Watch the live stream of transactions from your StateNotifier provider
+    // Watch the live stream of transactions from your StateNotifier provider
     final transactions = ref.watch(transactionProvider);
 
     return Scaffold(
@@ -49,7 +49,6 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // 🔥 Swapped out the static dummy text block for a reactive layout engine
       body: transactions.isEmpty
           ? Center(
               child: Column(
@@ -92,7 +91,8 @@ class DashboardScreen extends ConsumerWidget {
                 Expanded(
                   child: ListView.builder(
                     itemCount: transactions.length,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, bottom: 80),
+                    // 🔥 FIX 1: Replaced incorrect .symmetric parameters with correct .only arguments
+                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
                     itemBuilder: (context, index) {
                       final tx = transactions[index];
                       
@@ -133,19 +133,19 @@ class DashboardScreen extends ConsumerWidget {
                               backgroundColor: theme.colorScheme.surface,
                               shape: const RoundedRectangleBorder(
                                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                              ),
+                               ),
                               builder: (context) => TransactionDetailModal(transaction: tx),
                             ),
                             leading: CircleAvatar(
                               backgroundColor: tx.isTransfer 
-                                  ? Colors.blueAccent.withOpacity(0.1) 
+                                  ? Colors.amberAccent.withOpacity(0.1) 
                                   : (tx.isExpense ? Colors.redAccent.withOpacity(0.1) : Colors.greenAccent.withOpacity(0.1)),
                               child: Icon(
                                 tx.isTransfer 
                                     ? Icons.swap_horiz
                                     : (tx.isExpense ? Icons.north_east : Icons.south_west),
                                 color: tx.isTransfer 
-                                    ? Colors.blueAccent 
+                                    ? Colors.amberAccent 
                                     : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
                                 size: 18,
                               ),
@@ -170,14 +170,15 @@ class DashboardScreen extends ConsumerWidget {
                                     fontWeight: FontWeight.w900,
                                     fontSize: 14,
                                     color: tx.isTransfer 
-                                        ? Colors.blueAccent 
+                                        ? Colors.amberAccent 
                                         : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
                                   ),
                                 ),
                                 // Base currency evaluation readout if dealing with foreign metrics
                                 if (tx.currency != 'INR')
                                   Padding(
-                                    padding: const EdgeInsets.topDelta(2),
+                                    // 🔥 FIX 2: Replaced imaginary .topDelta constructor with valid .only parameters
+                                    padding: const EdgeInsets.only(top: 2),
                                     child: Text(
                                       '₹${tx.baseAmount.toStringAsFixed(0)}',
                                       style: TextStyle(
