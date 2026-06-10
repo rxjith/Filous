@@ -19,15 +19,17 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        // 🔄 Change 1: Updated branding name to 'Filous' with crisp styling
         title: const Text(
-          'FILOUS DASHBOARD', 
+          'Filous', 
           style: TextStyle(
-            fontWeight: FontWeight.w900, 
-            letterSpacing: 1.5,
-            fontSize: 20,
+            fontWeight: FontWeight.bold, 
+            letterSpacing: 0.5,
+            fontSize: 22,
           ),
         ),
-        centerTitle: true,
+        // 🔄 Change 2: Explicitly forced left-alignment across platforms
+        centerTitle: false,
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
@@ -91,7 +93,6 @@ class DashboardScreen extends ConsumerWidget {
                 Expanded(
                   child: ListView.builder(
                     itemCount: transactions.length,
-                    // 🔥 FIX 1: Replaced incorrect .symmetric parameters with correct .only arguments
                     padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
                     itemBuilder: (context, index) {
                       final tx = transactions[index];
@@ -177,7 +178,6 @@ class DashboardScreen extends ConsumerWidget {
                                 // Base currency evaluation readout if dealing with foreign metrics
                                 if (tx.currency != 'INR')
                                   Padding(
-                                    // 🔥 FIX 2: Replaced imaginary .topDelta constructor with valid .only parameters
                                     padding: const EdgeInsets.only(top: 2),
                                     child: Text(
                                       '₹${tx.baseAmount.toStringAsFixed(0)}',
