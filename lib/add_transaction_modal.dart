@@ -49,7 +49,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
     if (enteredTitle.isEmpty || enteredAmount <= 0) return;
 
-    // Determine target category fallback safety checks
     String targetCategory = 'Misc';
     if (_isTransfer) {
       targetCategory = 'Transfer';
@@ -91,10 +90,8 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    // 🔥 Dynamically harvest your custom envelope categories map straight out of Hive cache
     final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
 
-    // Fallback variable safety sync line
     if (_selectedCategory == null || !activeCategories.contains(_selectedCategory)) {
       _selectedCategory = activeCategories.isNotEmpty ? activeCategories.first : null;
     }
@@ -170,6 +167,15 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             TextField(
               controller: _titleController,
               decoration: const InputDecoration(labelText: 'Description / Payee Name', border: OutlineInputBorder()),
+              // 🔥 Live Guessing Engine for Creation flow: snaps dropdown dynamically while typing
+              onChanged: (textValue) {
+                if (!_isTransfer) {
+                  final guessed = ref.read(transactionProvider.notifier).guessCategory(textValue);
+                  if (guessed != 'Misc' && activeCategories.contains(guessed)) {
+                    setState(() => _selectedCategory = guessed);
+                  }
+                }
+              },
             ),
             const SizedBox(height: 12),
 
@@ -234,7 +240,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 if (!_isTransfer) ...[
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      // 🔥 READS LIVE USER CATEGORIES DIRECTLY
                       value: _selectedCategory,
                       decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Envelope Category'),
                       items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),

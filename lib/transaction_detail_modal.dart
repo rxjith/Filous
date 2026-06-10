@@ -26,7 +26,6 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   late String _selectedCurrency;
   bool _isEditing = false; 
 
-  final List<String> _categories = ['Food', 'Transport', 'Leisure', 'Subscriptions', 'Misc'];
   final List<String> _accounts = ['Cash', 'Bank', 'Credit'];
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
   final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
@@ -82,6 +81,14 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
+    // 🔥 Dynamic category lookup from Hive to replace hardcoded values and avoid app crashes
+    final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
+
+    // Fallback alignment filter to keep the dropdown selected state safe
+    if (!activeCategories.contains(_selectedCategory) && !_isTransfer) {
+      _selectedCategory = activeCategories.isNotEmpty ? activeCategories.first : 'Misc';
+    }
 
     return Padding(
       padding: EdgeInsets.only(
@@ -192,6 +199,15 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
               TextField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Payee Descriptor', border: OutlineInputBorder()),
+                // 🔥 Live Guessing Engine for Edit flow
+                onChanged: (textValue) {
+                  if (!_isTransfer) {
+                    final guessed = ref.read(transactionProvider.notifier).guessCategory(textValue);
+                    if (guessed != 'Misc' && activeCategories.contains(guessed)) {
+                      setState(() => _selectedCategory = guessed);
+                    }
+                  }
+                },
               ),
               const SizedBox(height: 12),
               Row(
@@ -248,7 +264,8 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                       child: DropdownButtonFormField<String>(
                         value: _selectedCategory,
                         decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Category'),
-                        items: _categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+                        // 🔥 Dynamic drop elements linked straight to database array state
+                        items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
                         onChanged: (val) => setState(() => _selectedCategory = val!),
                       ),
                     ),
