@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'manage_categories_modal.dart'; 
-import 'add_transaction_modal.dart';   
+import 'add_transaction_page.dart';   // 🛠️ Changed import from modal to the new full-screen page
 import 'transaction_detail_modal.dart';
 import 'transaction_provider.dart';
 import 'spending_chart.dart';
@@ -13,13 +13,10 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    
-    // Watch the live stream of transactions from your StateNotifier provider
     final transactions = ref.watch(transactionProvider);
 
     return Scaffold(
       appBar: AppBar(
-        // 🔄 Change 1: Updated branding name to 'Filous' with crisp styling
         title: const Text(
           'Filous', 
           style: TextStyle(
@@ -28,7 +25,6 @@ class DashboardScreen extends ConsumerWidget {
             fontSize: 22,
           ),
         ),
-        // 🔄 Change 2: Explicitly forced left-alignment across platforms
         centerTitle: false,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -73,9 +69,7 @@ class DashboardScreen extends ConsumerWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 📊 1. Render the dynamic high-contrast pie chart panel up at the top
                 SpendingChart(transactions: transactions),
-                
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
                   child: Text(
@@ -88,8 +82,6 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                
-                // 📜 2. Scrollable stream displaying historical entries
                 Expanded(
                   child: ListView.builder(
                     itemCount: transactions.length,
@@ -97,7 +89,6 @@ class DashboardScreen extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final tx = transactions[index];
                       
-                      // 🛑 3. Swipe-To-Delete gesture wrapped natively onto the cards
                       return Dismissible(
                         key: Key(tx.id),
                         direction: DismissDirection.endToStart,
@@ -127,7 +118,6 @@ class DashboardScreen extends ConsumerWidget {
                           color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           child: ListTile(
-                            // 🔍 4. Tap an item card to inspect/modify structural entries
                             onTap: () => showModalBottomSheet(
                               context: context,
                               isScrollControlled: true,
@@ -175,7 +165,6 @@ class DashboardScreen extends ConsumerWidget {
                                         : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
                                   ),
                                 ),
-                                // Base currency evaluation readout if dealing with foreign metrics
                                 if (tx.currency != 'INR')
                                   Padding(
                                     padding: const EdgeInsets.only(top: 2),
@@ -198,16 +187,14 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ],
             ),
+      // 🛠️ FIX: Clean routing straight to your new entry page
       floatingActionButton: FloatingActionButton(
-        onPressed: () => showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: theme.colorScheme.surface,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          builder: (context) => const AddTransactionModal(),
-        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddTransactionPage()),
+          );
+        },
         child: const Icon(Icons.add),
       ),
     );
