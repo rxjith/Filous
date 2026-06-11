@@ -12,3 +12,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+android/key.properties
+
+# 🛡️ Firebase Configuration (Fixed the path here)
+android/app/google-services.json

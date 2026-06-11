@@ -20,8 +20,8 @@ class SpendingChart extends StatelessWidget {
     double totalSpending = 0.0;
 
     for (var tx in expenses) {
-      categoryMap[tx.category] = (categoryMap[tx.category] ?? 0.0) + tx.amount;
-      totalSpending += tx.amount;
+      categoryMap[tx.category] = (categoryMap[tx.category] ?? 0.0) + tx.baseAmount;
+      totalSpending += tx.baseAmount;
     }
 
     // 🔥 1. Define a robust list of high-contrast minimalist accent colors

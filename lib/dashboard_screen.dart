@@ -17,16 +17,24 @@ class DashboardScreen extends ConsumerWidget {
     final transactions = ref.watch(transactionProvider);
     final budgets = ref.watch(transactionProvider.notifier).categoryBudgets;
     final now = DateTime.now();
+    
     final monthlyExpenses = transactions.where((tx) {
       return tx.isExpense &&
           tx.date.year == now.year &&
           tx.date.month == now.month;
     }).toList();
 
+    // Aggregate spending by category for the current month
+    final Map<String, double> categorySpending = {};
+    for (var tx in monthlyExpenses) {
+      categorySpending[tx.category] = (categorySpending[tx.category] ?? 0.0) + tx.baseAmount;
+    }
+
     final totalBudget = budgets.values.fold<double>(0, (sum, limit) => sum + limit);
     final totalSpent = monthlyExpenses.fold<double>(0, (sum, tx) => sum + tx.baseAmount);
     final remainingBudget = totalBudget > totalSpent ? totalBudget - totalSpent : 0.0;
     final budgetProgress = totalBudget == 0 ? 0.0 : (totalSpent / totalBudget).clamp(0.0, 1.0);
+
     final budgetCard = Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Container(
@@ -79,7 +87,7 @@ class DashboardScreen extends ConsumerWidget {
             Text(
               totalBudget == 0
                   ? 'No monthly limits configured yet.'
-                  : 'Spent ₹${totalSpent.toStringAsFixed(0)} of ₹${totalBudget.toStringAsFixed(0)}',
+                  : 'Spent: ₹${totalSpent.toStringAsFixed(0)} / ₹${totalBudget.toStringAsFixed(0)}',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -90,6 +98,79 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ),
     );
+
+    final categoryBudgetSection = budgets.isEmpty 
+        ? const SizedBox.shrink()
+        : SizedBox(
+            height: 120,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: budgets.length,
+              itemBuilder: (context, index) {
+                final category = budgets.keys.elementAt(index);
+                final limit = budgets[category] ?? 0.0;
+                final spent = categorySpending[category] ?? 0.0;
+                final progress = limit == 0 ? 0.0 : (spent / limit).clamp(0.0, 1.0);
+                
+                return Container(
+                  width: 160,
+                  margin: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceVariant.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        category.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '₹${(limit - spent).toStringAsFixed(0)} left',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: progress >= 1 ? Colors.redAccent : theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 4,
+                          backgroundColor: Colors.white.withOpacity(0.05),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            progress >= 1 ? Colors.redAccent : Colors.greenAccent,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Spent: ₹${spent.toStringAsFixed(0)} / ₹${limit.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
 
     return Scaffold(
       appBar: AppBar(
@@ -133,152 +214,153 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: transactions.isEmpty
-          ? Column(
-              children: [
-                budgetCard,
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.account_balance_wallet_outlined, size: 64, color: theme.colorScheme.primary.withOpacity(0.4)),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No transactions logged yet!',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white70),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap the + button below to log an entry.',
-                          style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.5)),
-                        ),
-                      ],
-                    ),
+      body: transactions.isEmpty && budgets.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.account_balance_wallet_outlined, size: 64, color: theme.colorScheme.primary.withOpacity(0.4)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No transactions logged yet!',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white70),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap the + button below to log an entry.',
+                    style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                  ),
+                ],
+              ),
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                budgetCard,
-                SpendingChart(transactions: transactions),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                  child: Text(
-                    'RECENT TRANSACTIONS',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.2,
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+          : CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: budgetCard),
+                SliverToBoxAdapter(child: const SizedBox(height: 8)),
+                SliverToBoxAdapter(child: categoryBudgetSection),
+                if (transactions.isNotEmpty) ...[
+                  SliverToBoxAdapter(child: SpendingChart(transactions: transactions)),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                      child: Text(
+                        'RECENT TRANSACTIONS',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                          color: theme.colorScheme.onSurface.withOpacity(0.4),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: transactions.length,
-                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 80),
-                    itemBuilder: (context, index) {
-                      final tx = transactions[index];
-                      
-                      return Dismissible(
-                        key: Key(tx.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
-                        ),
-                        onDismissed: (direction) {
-                          ref.read(transactionProvider.notifier).deleteTransaction(tx.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Removed execution entry for "${tx.title}"'),
-                              backgroundColor: theme.colorScheme.surfaceVariant,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
-                        child: Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          elevation: 0,
-                          color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            onTap: () => showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: theme.colorScheme.surface,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                               ),
-                              builder: (context) => TransactionDetailModal(transaction: tx),
-                            ),
-                            leading: CircleAvatar(
-                              backgroundColor: tx.isTransfer 
-                                  ? Colors.amberAccent.withOpacity(0.1) 
-                                  : (tx.isExpense ? Colors.redAccent.withOpacity(0.1) : Colors.greenAccent.withOpacity(0.1)),
-                              child: Icon(
-                                tx.isTransfer 
-                                    ? Icons.swap_horiz
-                                    : (tx.isExpense ? Icons.north_east : Icons.south_west),
-                                color: tx.isTransfer 
-                                    ? Colors.amberAccent 
-                                    : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
-                                size: 18,
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final tx = transactions[index];
+                        
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Dismissible(
+                            key: Key(tx.id),
+                            direction: DismissDirection.endToStart,
+                            background: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 20),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
                               ),
+                              child: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
                             ),
-                            title: Text(
-                              tx.title,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Text(
-                              '${tx.category} • ${DateFormat('dd MMM yyyy').format(tx.date)}',
-                              style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.5)),
-                            ),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '${tx.isExpense ? "-" : (tx.isTransfer ? "" : "+")} ${tx.currency} ${tx.amount.toStringAsFixed(0)}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 14,
+                            onDismissed: (direction) {
+                              ref.read(transactionProvider.notifier).deleteTransaction(tx.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Removed execution entry for "${tx.title}"'),
+                                  backgroundColor: theme.colorScheme.surfaceVariant,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                            child: Card(
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              elevation: 0,
+                              color: theme.colorScheme.surfaceVariant.withOpacity(0.2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              child: ListTile(
+                                onTap: () => showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: theme.colorScheme.surface,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                   ),
+                                  builder: (context) => TransactionDetailModal(transaction: tx),
+                                ),
+                                leading: CircleAvatar(
+                                  backgroundColor: tx.isTransfer 
+                                      ? Colors.amberAccent.withOpacity(0.1) 
+                                      : (tx.isExpense ? Colors.redAccent.withOpacity(0.1) : Colors.greenAccent.withOpacity(0.1)),
+                                  child: Icon(
+                                    tx.isTransfer 
+                                        ? Icons.swap_horiz
+                                        : (tx.isExpense ? Icons.north_east : Icons.south_west),
                                     color: tx.isTransfer 
                                         ? Colors.amberAccent 
                                         : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
+                                    size: 18,
                                   ),
                                 ),
-                                if (tx.currency != 'INR')
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 2),
-                                    child: Text(
-                                      '₹${tx.baseAmount.toStringAsFixed(0)}',
+                                title: Text(
+                                  tx.title,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  '${tx.category} • ${DateFormat('dd MMM yyyy').format(tx.date)}',
+                                  style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                                ),
+                                trailing: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '${tx.isExpense ? "-" : (tx.isTransfer ? "" : "+")} ${tx.currency} ${tx.amount.toStringAsFixed(0)}',
                                       style: TextStyle(
-                                        fontSize: 10, 
-                                        color: Colors.orangeAccent.withOpacity(0.8), 
-                                        fontWeight: FontWeight.bold
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 14,
+                                        color: tx.isTransfer 
+                                            ? Colors.amberAccent 
+                                            : (tx.isExpense ? Colors.redAccent : Colors.greenAccent),
                                       ),
                                     ),
-                                  ),
-                              ],
+                                    if (tx.currency != 'INR')
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          '₹${tx.baseAmount.toStringAsFixed(0)}',
+                                          style: TextStyle(
+                                            fontSize: 10, 
+                                            color: Colors.orangeAccent.withOpacity(0.8), 
+                                            fontWeight: FontWeight.bold
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                      childCount: transactions.length,
+                    ),
                   ),
-                ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                ],
               ],
             ),
       // 🛠️ FIX: Clean routing straight to your new entry page

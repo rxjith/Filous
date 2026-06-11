@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -17,7 +19,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isSignInMode = true;
   bool _isLoading = false;
 
-  void _submitAuthForm() async {
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _submitAuthForm() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -27,33 +41,84 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       if (_isSignInMode) {
-        // TODO: Integrate native Firebase/Supabase Email Sign In logic
-        // await ref.read(authProvider.notifier).signInWithEmail(email, password);
-        debugPrint('Logging in with: $email');
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
       } else {
-        // TODO: Integrate native Firebase/Supabase Email Sign Up logic
-        // await ref.read(authProvider.notifier).signUpWithEmail(email, password);
-        debugPrint('Registering user: $email');
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
       }
+    } on FirebaseAuthException catch (error) {
+      debugPrint('Auth Error: ${error.code} - ${error.message}');
+      String message = error.message ?? 'Authentication failed';
+      
+      if (message.contains('CONFIGURATION_NOT_FOUND')) {
+        message = 'Firebase Auth is not fully set up. Please enable "Email/Password" in your Firebase Console.';
+      }
+      
+      _showError(message);
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString()), backgroundColor: Colors.redAccent),
-      );
+      debugPrint('General Auth Error: $error');
+      _showError('An unexpected error occurred. Please try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _handleGoogleSignIn() async {
+  Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Integrate your Google Sign-In trigger flow here
-      // await ref.read(authProvider.notifier).signInWithGoogle();
-      debugPrint('Triggering Google Auth Pipeline...');
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google Sign-In Failed: $error'), backgroundColor: Colors.redAccent),
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+    } on FirebaseAuthException catch (error) {
+      debugPrint('Google Sign-In Error (Firebase): ${error.code} - ${error.message}');
+      String message = error.message ?? 'Google Sign-In Failed';
+      if (message.contains('CONFIGURATION_NOT_FOUND')) {
+        message = 'Google Auth is not enabled in Firebase Console.';
+      }
+      _showError(message);
+    } catch (error) {
+      debugPrint('Google Sign-In Error: $error');
+      String message = 'Google Sign-In failed.';
+      if (error.toString().contains('ApiException: 10')) {
+        message = 'Google Sign-In Error (10): Ensure your SHA-1 fingerprint is added to Firebase Console.';
+      }
+      _showError(message);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGuestSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.signInAnonymously();
+    } on FirebaseAuthException catch (error) {
+      debugPrint('Guest Sign-In Error (Firebase): ${error.code} - ${error.message}');
+      String message = error.message ?? 'Guest login failed';
+      if (error.code == 'admin-restricted-operation' || message.contains('CONFIGURATION_NOT_FOUND')) {
+        message = 'Guest login (Anonymous) is disabled in Firebase Console.';
+      }
+      _showError(message);
+    } catch (error) {
+      debugPrint('Guest Sign-In Error: $error');
+      _showError('Could not log in as guest.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -174,7 +239,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       side: BorderSide(color: theme.dividerColor.withOpacity(0.4)),
                     ),
                     icon: Image.network(
-                      'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
+                      'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
                       height: 20,
                       width: 20,
                       errorBuilder: (context, _, __) => const Icon(Icons.g_mobiledata, size: 24),
@@ -184,7 +249,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
+                  
+                  // Guest Login Option
+                  TextButton(
+                    onPressed: _isLoading ? null : _handleGuestSignIn,
+                    child: const Text(
+                      'Continue as Guest',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 12),
 
                   // Interactive Mode Toggle link
                   TextButton(

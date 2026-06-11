@@ -106,339 +106,346 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
       }
     }
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20, right: 20, top: 20,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Head Section Panel Layout
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _isEditing ? 'MODIFY ENTRIES' : 'LEDGER METADATA', 
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900, 
-                    letterSpacing: 1.2, 
-                    color: theme.colorScheme.primary
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(_isEditing ? Icons.close : Icons.edit_note, color: theme.colorScheme.primary),
-                  onPressed: () => setState(() => _isEditing = !_isEditing),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            
-            // --- READ ONLY PRESENTATION STACK ---
-            if (!_isEditing) ...[
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Title Descriptor', style: TextStyle(fontSize: 11, color: Colors.white38)),
-                subtitle: Text(widget.transaction.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 20, right: 20, top: 20,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Head Section Panel Layout
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Value Amount', style: TextStyle(fontSize: 11, color: Colors.white38)),
-                      subtitle: Text(
-                        '$_selectedCurrency ${widget.transaction.amount.toStringAsFixed(0)}', 
-                        style: TextStyle(
-                          fontSize: 18, 
-                          fontWeight: FontWeight.w900, 
-                          // High-contrast, easy-on-the-eyes color distribution
-                          color: _isTransfer 
-                              ? Colors.amberAccent 
-                              : (_isExpense ? Colors.redAccent : Colors.greenAccent)
-                        ),
-                      ),
+                  Text(
+                    _isEditing ? 'MODIFY ENTRIES' : 'TRANSACTION DETAIL', 
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900, 
+                      letterSpacing: 1.2, 
+                      color: theme.colorScheme.primary
                     ),
                   ),
-                  Expanded(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Flow Strategy', style: TextStyle(fontSize: 11, color: Colors.white38)),
-                      subtitle: Text(
-                        _isTransfer ? 'Transfer 🔄' : (_isExpense ? 'Expense 🛑' : 'Income 💰'), 
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: DiskListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(_isTransfer ? 'Debited Account' : 'Source Wallet', style: const TextStyle(fontSize: 11, color: Colors.white38)),
-                      subtitle: Text(widget.transaction.account, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  Expanded(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(_isTransfer ? 'Credited Account' : 'Budget Envelope', style: const TextStyle(fontSize: 11, color: Colors.white38)),
-                      subtitle: Text(
-                        _isTransfer ? (widget.transaction.toAccount ?? 'None') : widget.transaction.category, 
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (widget.transaction.currency != 'INR')
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Standardized Cost Evaluation (Base Currency)', style: TextStyle(fontSize: 11, color: Colors.white38)),
-                  subtitle: Text('₹${widget.transaction.baseAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
-                ),
-              const SizedBox(height: 24),
-            ] 
-            
-            // --- EDITABLE INTERACTIVE FORM STACK ---
-            else ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: ChoiceChip(
-                      label: const Center(child: Text('Expense')),
-                      selected: _isExpense && !_isTransfer,
-                      selectedColor: Colors.redAccent.withOpacity(0.2),
-                      onSelected: (val) => setState(() { _isExpense = true; _isTransfer = false; }),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: ChoiceChip(
-                      label: const Center(child: Text('Income')),
-                      selected: !_isExpense && !_isTransfer,
-                      selectedColor: Colors.greenAccent.withOpacity(0.2),
-                      onSelected: (val) => setState(() { _isExpense = false; _isTransfer = false; }),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: ChoiceChip(
-                      label: const Center(child: Text('Transfer')),
-                      selected: _isTransfer,
-                      selectedColor: Colors.amberAccent.withOpacity(0.2),
-                      onSelected: (val) => setState(() { _isTransfer = true; }),
-                    ),
+                  IconButton(
+                    icon: Icon(_isEditing ? Icons.close : Icons.edit_note, color: theme.colorScheme.primary),
+                    onPressed: () => setState(() => _isEditing = !_isEditing),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Payee Descriptor', border: OutlineInputBorder()),
-                // Integrated background auto-guessing engine connection rule
-                onChanged: (textValue) {
-                  if (!_isTransfer) {
-                    final guessed = ref.read(transactionProvider.notifier).guessCategory(textValue);
-                    if (guessed != 'Misc' && activeCategories.contains(guessed)) {
-                      setState(() => _selectedCategory = guessed);
-                    }
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              if (useCompactLayout) ...[
-                TextField(
-                  controller: _amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Amount Balance',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _selectedCurrency,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Currency',
-                  ),
-                  items: _currencies
-                      .map((cur) => DropdownMenuItem(value: cur, child: Text(cur)))
-                      .toList(),
-                  onChanged: (val) => setState(() => _selectedCurrency = val!),
-                ),
-              ] else
+              
+              // --- READ ONLY PRESENTATION STACK ---
+              if (!_isEditing) ...[
                 Row(
                   children: [
                     Expanded(
-                      flex: 3,
-                      child: TextField(
-                        controller: _amountController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Amount Balance',
-                          border: OutlineInputBorder(),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Category', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                        subtitle: Text(
+                          _isTransfer ? 'Transfer' : widget.transaction.category, 
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
                     Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedCurrency,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Currency',
-                        ),
-                        items: _currencies
-                            .map((cur) => DropdownMenuItem(value: cur, child: Text(cur)))
-                            .toList(),
-                        onChanged: (val) => setState(() => _selectedCurrency = val!),
-                      ),
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedAccount,
-                      isExpanded: true,
-                      decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'From Account' : 'Account Source'),
-                      items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedAccount = val!;
-                          // 🔥 CRITICAL FIXED: If source and destination match, cascade shift selection 
-                          // to prevent standard AssertionError menu validation crashes
-                          if (_selectedAccount == _selectedToAccount) {
-                            _selectedToAccount = _accounts.firstWhere((a) => a != _selectedAccount);
-                          }
-                        });
-                      },
-                    ),
-                  ),
-                  if (_isTransfer) ...[
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: _selectedToAccount,
-                        isExpanded: true,
-                        decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'To Account'),
-                        // Safely filter choice list matching constraints
-                        items: _accounts.where((a) => a != _selectedAccount).map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
-                        onChanged: (val) => setState(() => _selectedToAccount = val!),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (!_isTransfer && useCompactLayout) ...[
-                DropdownButtonFormField<String>(
-                  value: _selectedCategory,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Envelope',
-                  ),
-                  items: activeCategories.isEmpty
-                      ? [const DropdownMenuItem(value: 'Misc', child: Text('Misc'))]
-                      : activeCategories
-                          .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                          .toList(),
-                  onChanged: (val) => setState(() => _selectedCategory = val),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: _selectedRecurrence,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    labelText: 'Recurrence',
-                  ),
-                  items: _recurrences
-                      .map((rec) => DropdownMenuItem(value: rec, child: Text(rec)))
-                      .toList(),
-                  onChanged: (val) => setState(() => _selectedRecurrence = val!),
-                ),
-              ] else
-                Row(
-                  children: [
-                    if (!_isTransfer) ...[
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedCategory,
-                          isExpanded: true,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Envelope',
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Amount', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                        subtitle: Text(
+                          '${widget.transaction.currency == 'INR' ? '₹' : widget.transaction.currency} ${widget.transaction.amount.toStringAsFixed(0)}', 
+                          style: TextStyle(
+                            fontSize: 16, 
+                            fontWeight: FontWeight.w900, 
+                            color: _isTransfer 
+                                ? Colors.amberAccent 
+                                : (_isExpense ? Colors.redAccent : Colors.greenAccent)
                           ),
-                          items: activeCategories.isEmpty
-                              ? [const DropdownMenuItem(value: 'Misc', child: Text('Misc'))]
-                              : activeCategories
-                                  .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                                  .toList(),
-                          onChanged: (val) => setState(() => _selectedCategory = val),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Date', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                        subtitle: Text(
+                          DateFormat('dd MMM yyyy').format(widget.transaction.date), 
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Note', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                        subtitle: Text(
+                          widget.transaction.title, 
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(_isTransfer ? 'Debited Account' : 'Account', style: const TextStyle(fontSize: 11, color: Colors.white38)),
+                        subtitle: Text(widget.transaction.account, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    if (_isTransfer)
+                      Expanded(
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Credited Account', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                          subtitle: Text(
+                            widget.transaction.toAccount ?? 'None', 
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                if (widget.transaction.currency != 'INR')
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Base Amount (INR)', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                    subtitle: Text('₹${widget.transaction.baseAmount.toStringAsFixed(0)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orangeAccent)),
+                  ),
+                const SizedBox(height: 24),
+              ] 
+              
+              // --- EDITABLE INTERACTIVE FORM STACK ---
+              else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Center(child: Text('Expense')),
+                        selected: _isExpense && !_isTransfer,
+                        selectedColor: Colors.redAccent.withOpacity(0.2),
+                        onSelected: (val) => setState(() { _isExpense = true; _isTransfer = false; }),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Center(child: Text('Income')),
+                        selected: !_isExpense && !_isTransfer,
+                        selectedColor: Colors.greenAccent.withOpacity(0.2),
+                        onSelected: (val) => setState(() { _isExpense = false; _isTransfer = false; }),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Center(child: Text('Transfer')),
+                        selected: _isTransfer,
+                        selectedColor: Colors.amberAccent.withOpacity(0.2),
+                        onSelected: (val) => setState(() { _isTransfer = true; }),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(labelText: 'Description / Note', border: OutlineInputBorder()),
+                  onChanged: (textValue) {
+                    if (!_isTransfer) {
+                      final guessed = ref.read(transactionProvider.notifier).guessCategory(textValue);
+                      if (guessed != 'Misc' && activeCategories.contains(guessed)) {
+                        setState(() => _selectedCategory = guessed);
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                if (useCompactLayout) ...[
+                  TextField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Amount',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCurrency,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Currency',
+                    ),
+                    items: _currencies
+                        .map((cur) => DropdownMenuItem(value: cur, child: Text(cur)))
+                        .toList(),
+                    onChanged: (val) => setState(() => _selectedCurrency = val!),
+                  ),
+                ] else
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextField(
+                          controller: _amountController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Amount',
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedCurrency,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Currency',
+                          ),
+                          items: _currencies
+                              .map((cur) => DropdownMenuItem(value: cur, child: Text(cur)))
+                              .toList(),
+                          onChanged: (val) => setState(() => _selectedCurrency = val!),
+                        ),
+                      ),
                     ],
+                  ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedRecurrence,
+                        value: _selectedAccount,
                         isExpanded: true,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Recurrence',
-                        ),
-                        items: _recurrences
-                            .map((rec) => DropdownMenuItem(value: rec, child: Text(rec)))
-                            .toList(),
-                        onChanged: (val) => setState(() => _selectedRecurrence = val!),
+                        decoration: InputDecoration(border: const OutlineInputBorder(), labelText: _isTransfer ? 'From Account' : 'Account'),
+                        items: _accounts.map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            _selectedAccount = val!;
+                            if (_selectedAccount == _selectedToAccount) {
+                              _selectedToAccount = _accounts.firstWhere((a) => a != _selectedAccount);
+                            }
+                          });
+                        },
                       ),
                     ),
+                    if (_isTransfer) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedToAccount,
+                          isExpanded: true,
+                          decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'To Account'),
+                          items: _accounts.where((a) => a != _selectedAccount).map((acc) => DropdownMenuItem(value: acc, child: Text(acc))).toList(),
+                          onChanged: (val) => setState(() => _selectedToAccount = val!),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _saveChanges,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
+                const SizedBox(height: 12),
+                if (!_isTransfer && useCompactLayout) ...[
+                  DropdownButtonFormField<String>(
+                    value: _selectedCategory,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Category',
+                    ),
+                    items: activeCategories.isEmpty
+                        ? [const DropdownMenuItem(value: 'Misc', child: Text('Misc'))]
+                        : activeCategories
+                            .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                            .toList(),
+                    onChanged: (val) => setState(() => _selectedCategory = val),
                   ),
-                  child: const Text('Apply Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _selectedRecurrence,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Recurrence',
+                    ),
+                    items: _recurrences
+                        .map((rec) => DropdownMenuItem(value: rec, child: Text(rec)))
+                        .toList(),
+                    onChanged: (val) => setState(() => _selectedRecurrence = val!),
+                  ),
+                ] else
+                  Row(
+                    children: [
+                      if (!_isTransfer) ...[
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedCategory,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              labelText: 'Category',
+                            ),
+                            items: activeCategories.isEmpty
+                                ? [const DropdownMenuItem(value: 'Misc', child: Text('Misc'))]
+                                : activeCategories
+                                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                                    .toList(),
+                            onChanged: (val) => setState(() => _selectedCategory = val),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedRecurrence,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            labelText: 'Recurrence',
+                          ),
+                          items: _recurrences
+                              .map((rec) => DropdownMenuItem(value: rec, child: Text(rec)))
+                              .toList(),
+                          onChanged: (val) => setState(() => _selectedRecurrence = val!),
+                        ),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _saveChanges,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Apply Changes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class DiskListTile extends StatelessWidget {
-  final Widget title;
-  final Widget subtitle;
-  final EdgeInsetsGeometry contentPadding;
-  const DiskListTile({super.key, required this.title, required this.subtitle, required this.contentPadding});
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(contentPadding: contentPadding, title: title, subtitle: subtitle);
-  }
-}

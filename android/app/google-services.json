@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "351567356453",
+    "project_id": "filous-75cd0",
+    "storage_bucket": "filous-75cd0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:351567356453:android:2d4db98911b5684b7d15cc",
+        "android_client_info": {
+          "package_name": "com.filous.budgettracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "351567356453-8u37tjr1m74dfdjpv3q19h1ve38hf3tu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.filous.budgettracker",
+            "certificate_hash": "a34d74385dfba512ccdb0c8ebaec4741b4981956"
+          }
+        },
+        {
+          "client_id": "351567356453-ou7n0tkno3scgkceepq7n9kbsldnu09f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.filous.budgettracker",
+            "certificate_hash": "455ce7103f646f59c0340f161e8d232903e81227"
+          }
+        },
+        {
+          "client_id": "351567356453-laqg251adcmneudgjncquh68ibo2gcol.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_POAiZycVRap7oolX3AFj1qI7pS6dfnU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "351567356453-laqg251adcmneudgjncquh68ibo2gcol.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

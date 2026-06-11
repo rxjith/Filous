@@ -1,4 +1,4 @@
-package com.example.filous
+package com.filous.budgettracker
 
 import android.content.Intent
 import android.net.Uri
