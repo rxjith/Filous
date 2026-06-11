@@ -1,10 +1,12 @@
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services") // 🛠️ Applied Firebase plugin
 }
 
 android {
-    namespace = "com.example.filous"
+    // 🛠️ Updated to match your unique package name
+    namespace = "com.filous.budgettracker" 
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -14,7 +16,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.filous"
+        // 🛠️ Matches the package name registered in your Firebase Console
+        applicationId = "com.filous.budgettracker"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

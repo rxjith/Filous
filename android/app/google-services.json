@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "351567356453",
+    "project_id": "filous-75cd0",
+    "storage_bucket": "filous-75cd0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:351567356453:android:2d4db98911b5684b7d15cc",
+        "android_client_info": {
+          "package_name": "com.filous.budgettracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_POAiZycVRap7oolX3AFj1qI7pS6dfnU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -44,11 +44,21 @@ subprojects {
         }
     }
 
-    // ⚡ CRUCIAL FIX: Run immediately if eagerly evaluated, otherwise queue up safely
     if (state.executed) {
         configBlock.execute(this)
     } else {
         afterEvaluate(configBlock)
+    }
+}
+
+// 🛠️ Added the buildscript block to properly register the Google Services Classpath for legacy structures
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.google.gms:google-services:4.4.2")
     }
 }
 
