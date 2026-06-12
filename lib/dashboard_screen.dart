@@ -44,8 +44,11 @@ class DashboardScreen extends ConsumerWidget {
     final totalBudget = budgets.values.fold<double>(0, (sum, limit) => sum + limit);
     final totalSpent = monthlyExpenses.fold<double>(0, (sum, tx) => sum + tx.baseAmount);
     final totalIncome = monthlyIncome.fold<double>(0, (sum, tx) => sum + tx.baseAmount);
-    final remainingBudget = totalBudget > totalSpent ? totalBudget - totalSpent : 0.0;
-    final budgetProgress = totalBudget == 0 ? 0.0 : (totalSpent / totalBudget).clamp(0.0, 1.0);
+    
+    // 🔥 Income Increment: receiving money increases your available budget for the month
+    final effectiveTotalBudget = totalBudget + totalIncome;
+    final remainingBudget = effectiveTotalBudget > totalSpent ? effectiveTotalBudget - totalSpent : 0.0;
+    final budgetProgress = effectiveTotalBudget == 0 ? 0.0 : (totalSpent / effectiveTotalBudget).clamp(0.0, 1.0);
 
     final budgetCard = Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),

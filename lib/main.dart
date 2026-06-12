@@ -182,6 +182,10 @@ class _FilousAppState extends ConsumerState<FilousApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // 🔥 Refresh the UI state from storage whenever the app comes back to focus
+      // This picks up transactions saved by the backgroundMessageHandler
+      ref.read(transactionProvider.notifier).reloadFromStorage();
+      
       BackupService.runScheduledBackupIfDue().catchError((error) {
         debugPrint('Scheduled backup skipped on resume: $error');
         return false;

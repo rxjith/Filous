@@ -20,15 +20,21 @@ class SmsTransactionParser {
 
     final normalizedBody = body.toLowerCase();
     
-    // Very basic check to distinguish between spending and receiving
-    final isIncome = normalizedBody.contains('credited') || normalizedBody.contains('received');
+    // Expanded check for income keywords (credited, received, deposited, refund, added to, etc.)
+    final isIncome = normalizedBody.contains('credited') || 
+                     normalizedBody.contains('received') ||
+                     normalizedBody.contains('deposited') ||
+                     normalizedBody.contains('refund') ||
+                     normalizedBody.contains('added to') ||
+                     normalizedBody.contains('cr '); // Common abbreviation for Credit
+    
     final isExpense = !isIncome;
 
     final timestampMs = message.date ?? DateTime.now().millisecondsSinceEpoch;
 
     return Transaction(
       id: 'sms_${message.address ?? 'unknown'}_${timestampMs}_$amount',
-      title: 'SMS Transaction',
+      title: isIncome ? 'UPI Received' : 'UPI Payment',
       amount: amount,
       date: DateTime.fromMillisecondsSinceEpoch(timestampMs),
       category: 'UPI', 
