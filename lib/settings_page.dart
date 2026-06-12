@@ -1,9 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:app_settings/app_settings.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
 
 import 'backup_service.dart';
 import 'transaction_provider.dart';
+import 'theme_provider.dart';
+import 'app_mode_provider.dart';
+import 'onboarding_screen.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -155,9 +163,45 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
+  Future<void> _openAutostartSettings() async {
+    final List<Map<String, String>> intents = [
+      {'package': 'com.miui.securitycenter', 'component': 'com.miui.permcenter.autostart.AutoStartManagementActivity'},
+      {'package': 'com.letv.android.letvsafe', 'component': 'com.letv.android.letvsafe.AutobootManageActivity'},
+      {'package': 'com.huawei.systemmanager', 'component': 'com.huawei.systemmanager.optimize.process.ProtectActivity'},
+      {'package': 'com.coloros.safecenter', 'component': 'com.coloros.safecenter.permission.startup.StartupAppListActivity'},
+      {'package': 'com.oppo.safe', 'component': 'com.oppo.safe.permission.startup.StartupAppListActivity'},
+      {'package': 'com.iqoo.secure', 'component': 'com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity'},
+      {'package': 'com.vivo.permissionmanager', 'component': 'com.vivo.permissionmanager.activity.BgStartUpManagerActivity'},
+      {'package': 'com.samsung.android.lool', 'component': 'com.samsung.android.sm.ui.battery.BatteryActivity'},
+    ];
+
+    bool launched = false;
+    for (var intentData in intents) {
+      try {
+        final intent = AndroidIntent(
+          action: 'android.intent.action.MAIN',
+          package: intentData['package'],
+          componentName: intentData['component'],
+          flags: [Flag.FLAG_ACTIVITY_NEW_TASK],
+        );
+        await intent.launch();
+        launched = true;
+        break;
+      } catch (e) {
+        debugPrint('Intent failed: ${intentData['package']}');
+      }
+    }
+    if (!launched) {
+      await openAppSettings();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeState = ref.watch(themeProvider);
+    final themeNotifier = ref.read(themeProvider.notifier);
+    final appMode = ref.watch(appModeProvider);
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
@@ -217,6 +261,208 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     onPressed: _handleLogout,
                     icon: const Icon(Icons.logout, color: Colors.redAccent),
                     label: const Text('Sign Out', style: TextStyle(color: Colors.redAccent)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'APPEARANCE',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.1,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Theme Source', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Center(child: Text('Dynamic')),
+                        selected: themeState.themeSource == ThemeSource.dynamic,
+                        onSelected: (val) => themeNotifier.setThemeSource(ThemeSource.dynamic),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Center(child: Text('Presets')),
+                        selected: themeState.themeSource == ThemeSource.preset,
+                        onSelected: (val) => themeNotifier.setThemeSource(ThemeSource.preset),
+                      ),
+                    ),
+                  ],
+                ),
+                if (themeState.themeSource == ThemeSource.preset) ...[
+                  const SizedBox(height: 16),
+                  const Text('Select Preset Color', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      _ColorCircle(
+                        color: const Color(0xFF6366F1), // Indigo
+                        selected: themeState.presetColor == const Color(0xFF6366F1),
+                        onTap: () => themeNotifier.setPresetColor(const Color(0xFF6366F1)),
+                      ),
+                      _ColorCircle(
+                        color: const Color(0xFFE11D48), // Rose
+                        selected: themeState.presetColor == const Color(0xFFE11D48),
+                        onTap: () => themeNotifier.setPresetColor(const Color(0xFFE11D48)),
+                      ),
+                      _ColorCircle(
+                        color: const Color(0xFFF59E0B), // Amber
+                        selected: themeState.presetColor == const Color(0xFFF59E0B),
+                        onTap: () => themeNotifier.setPresetColor(const Color(0xFFF59E0B)),
+                      ),
+                      _ColorCircle(
+                        color: const Color(0xFF10B981), // Emerald
+                        selected: themeState.presetColor == const Color(0xFF10B981),
+                        onTap: () => themeNotifier.setPresetColor(const Color(0xFF10B981)),
+                      ),
+                      _ColorCircle(
+                        color: const Color(0xFF8B5CF6), // Violet
+                        selected: themeState.presetColor == const Color(0xFF8B5CF6),
+                        onTap: () => themeNotifier.setPresetColor(const Color(0xFF8B5CF6)),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 16),
+                const Text('Theme Mode', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<ThemeMode>(
+                  value: themeState.themeMode,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                  items: ThemeMode.values.map((mode) {
+                    return DropdownMenuItem(
+                      value: mode,
+                      child: Text(mode.name[0].toUpperCase() + mode.name.substring(1).toLowerCase()),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) themeNotifier.setThemeMode(val);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'APP EXPERIENCE',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.1,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Tracking Mode', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                Text(
+                  'Current: ${appMode == AppMode.budget ? "Budget Tracker" : "Spending Tracker"}',
+                  style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Switch App Mode?'),
+                          content: const Text('Switching modes will change how your dashboard looks. You can switch back anytime.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+                            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('SWITCH')),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        final newMode = appMode == AppMode.budget ? AppMode.spending : AppMode.budget;
+                        ref.read(appModeProvider.notifier).state = newMode;
+                        Hive.box('app_settings').put('app_mode', newMode.index);
+                      }
+                    },
+                    child: Text('Switch to ${appMode == AppMode.budget ? "Spending" : "Budget"} Tracker'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'BACKGROUND RELIABILITY',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.1,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Battery & Background Logging', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                Text(
+                  'To ensure SMS transactions are logged even when the app is closed, please disable battery optimization.',
+                  style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Background Logging'),
+                          content: const Text('This will open your system settings. Please find "Filous" and set it to "Unrestricted" or "Not Optimized".'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+                            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('OPEN SETTINGS')),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        await Permission.ignoreBatteryOptimizations.request();
+                        if (!(await Permission.ignoreBatteryOptimizations.isGranted)) {
+                          await AppSettings.openAppSettings(type: AppSettingsType.batteryOptimization);
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.battery_saver),
+                    label: const Text('Disable Battery Optimization'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _openAutostartSettings,
+                    icon: const Icon(Icons.rocket_launch),
+                    label: const Text('Enable Autostart'),
                   ),
                 ),
               ],
@@ -336,6 +582,45 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ColorCircle extends StatelessWidget {
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ColorCircle({
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: selected ? Colors.white : Colors.transparent,
+            width: 3,
+          ),
+          boxShadow: [
+            if (selected)
+              BoxShadow(
+                color: color.withOpacity(0.4),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+          ],
+        ),
       ),
     );
   }

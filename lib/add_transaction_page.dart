@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
+import 'currency_service.dart';
 
 class AddTransactionPage extends ConsumerStatefulWidget {
   const AddTransactionPage({super.key});
@@ -28,7 +29,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
   final List<String> _accounts = ['Cash', 'Bank', 'Credit'];
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
-  final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
+  final List<String> _currencies = CurrencyService.supportedCurrencies;
 
   void _presentDatePicker() async {
     final now = DateTime.now();
@@ -98,7 +99,6 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     }
 
     return Scaffold(
-      // 🛠️ THE CRITICAL ULTIMATE FIX: Stops the keyboard frame from shrinking the viewport space
       resizeToAvoidBottomInset: false, 
       appBar: AppBar(
         title: Text(
@@ -302,7 +302,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(), 
-                    labelText: 'Envelope Category',
+                    labelText: 'Category',
                     isDense: true,
                   ),
                   items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
@@ -314,7 +314,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(), 
-                    labelText: 'Recurrence Rule',
+                    labelText: 'Repeat',
                     isDense: true,
                   ),
                   items: _recurrences.map((rec) => DropdownMenuItem(value: rec, child: Text(rec))).toList(),
@@ -330,7 +330,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           isExpanded: true,
                           decoration: const InputDecoration(
                             border: OutlineInputBorder(), 
-                            labelText: 'Envelope Category',
+                            labelText: 'Category',
                             isDense: true,
                           ),
                           items: activeCategories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
@@ -345,7 +345,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                         isExpanded: true,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(), 
-                          labelText: 'Recurrence Rule',
+                          labelText: 'Repeat',
                           isDense: true,
                         ),
                         items: _recurrences.map((rec) => DropdownMenuItem(value: rec, child: Text(rec))).toList(),

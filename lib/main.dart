@@ -12,6 +12,9 @@ import 'dashboard_screen.dart';
 import 'transaction_provider.dart';
 import 'sms_transaction_parser.dart';
 import 'sms_permission_page.dart';
+import 'package:dynamic_color/dynamic_color.dart';
+import 'theme_provider.dart';
+import 'onboarding_screen.dart';
 import 'login_screen.dart';
 
 /// 🔥 Top-level global function required to capture SMS events 
@@ -64,6 +67,7 @@ class _FilousAppState extends ConsumerState<FilousApp>
   static const String _hasSeenSmsPermissionExplainerKey =
       'has_seen_sms_permission_explainer';
   static const String _smsAutoLoggingEnabledKey = 'sms_auto_logging_enabled';
+  static const String _isOnboardedKey = 'is_onboarded';
 
   final Telephony telephony = Telephony.instance;
   late final Box _settingsBox;
@@ -187,41 +191,79 @@ class _FilousAppState extends ConsumerState<FilousApp>
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Filous',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(useMaterial3: true).copyWith(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1), 
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: const Color(0xFF0F0F1A), 
-      ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          }
-          
-          if (snapshot.hasData) {
-            return _isBootstrapping
-                ? const Scaffold(
-                    body: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : _showSmsPermissionExplainer
-                    ? SmsPermissionPage(
-                        onAllow: _handleSmsPermissionAccepted,
-                        onSkip: _handleSmsPermissionSkipped,
-                      )
-                    : const DashboardScreen();
-          }
-          
-          return const LoginScreen();
-        },
-      ),
+    final themeState = ref.watch(themeProvider);
+
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        ColorScheme lightColorScheme;
+        ColorScheme darkColorScheme;
+
+        if (themeState.themeSource == ThemeSource.dynamic && lightDynamic != null && darkDynamic != null) {
+          lightColorScheme = lightDynamic.harmonized();
+          darkColorScheme = darkDynamic.harmonized();
+        } else {
+          lightColorScheme = ColorScheme.fromSeed(
+            seedColor: themeState.presetColor,
+            brightness: Brightness.light,
+          );
+          darkColorScheme = ColorScheme.fromSeed(
+            seedColor: themeState.presetColor,
+            brightness: Brightness.dark,
+          );
+        }
+
+        return MaterialApp(
+          title: 'Filous',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: lightColorScheme,
+            scaffoldBackgroundColor: lightColorScheme.surface,
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorScheme: darkColorScheme,
+            scaffoldBackgroundColor: const Color(0xFF0F0F1A), 
+          ),
+          themeMode: themeState.themeMode,
+          home: StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              }
+              
+              if (snapshot.hasData) {
+                return ValueListenableBuilder(
+                  valueListenable: _settingsBox.listenable(keys: [_isOnboardedKey]),
+                  builder: (context, Box box, _) {
+                    final isOnboarded = box.get(_isOnboardedKey, defaultValue: false) as bool;
+
+                    if (!isOnboarded) {
+                      return const OnboardingScreen();
+                    }
+
+                    return _isBootstrapping
+                        ? const Scaffold(
+                            body: Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        : _showSmsPermissionExplainer
+                            ? SmsPermissionPage(
+                                onAllow: _handleSmsPermissionAccepted,
+                                onSkip: _handleSmsPermissionSkipped,
+                              )
+                            : const DashboardScreen();
+                  },
+                );
+              }
+              
+              return const LoginScreen();
+            },
+          ),
+        );
+      },
     );
   }
 }

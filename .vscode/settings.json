@@ -1,3 +1,5 @@
 {
-    "cmake.sourceDirectory": "/home/rojith/Documents/Programs/filous/linux/flutter"
+    "cmake.sourceDirectory": "/home/rojith/Documents/Programs/filous/linux/flutter",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic"
 }

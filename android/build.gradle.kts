@@ -3,6 +3,9 @@ allprojects {
         google()
         mavenCentral()
     }
+    extra.set("compileSdkVersion", 36)
+    extra.set("targetSdkVersion", 36)
+    extra.set("minSdkVersion", 21)
 }
 
 val newBuildDir: Directory =
@@ -16,20 +19,29 @@ subprojects {
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 
+// Ensure proper build ordering safely
 subprojects {
-    project.evaluationDependsOn(":app")
+    if (project.name != "app") {
+        project.evaluationDependsOn(":app")
+    }
 }
 
-// 🛡️ THE LIFECYCLE-SAFE COMPILER PATCH
+// 🛡️ COMBINED & LIFECYCLE-SAFE OVERRIDE FOR ALL SUBPROJECTS
 subprojects {
     val configBlock = Action<Project> {
-        // Force all subproject Java compiler tasks to JVM 11
+        // 1. Force SDK compiling limits cleanly
+        if (plugins.hasPlugin("com.android.library") || plugins.hasPlugin("com.android.application")) {
+            val androidExt = extensions.findByType<com.android.build.gradle.BaseExtension>()
+            androidExt?.compileSdkVersion(36)
+        }
+
+        // 2. Force Java compiler tasks to JVM 11
         tasks.withType<JavaCompile>().configureEach {
             sourceCompatibility = JavaVersion.VERSION_11.toString()
             targetCompatibility = JavaVersion.VERSION_11.toString()
         }
 
-        // Intercept legacy and modern Kotlin tasks safely by name
+        // 3. Intercept legacy and modern Kotlin tasks safely by name
         tasks.configureEach {
             if (name.contains("KotlinCompile")) {
                 try {
@@ -44,6 +56,7 @@ subprojects {
         }
     }
 
+    // Dynamic execution guard to stop the "already evaluated" crash
     if (state.executed) {
         configBlock.execute(this)
     } else {
@@ -51,7 +64,7 @@ subprojects {
     }
 }
 
-// 🛠️ Added the buildscript block to properly register the Google Services Classpath for legacy structures
+// 🛠️ Google Services Classpath registration for Firebase native injection
 buildscript {
     repositories {
         google()

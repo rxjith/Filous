@@ -26,6 +26,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
   late String _selectedToAccount;
   late String _selectedRecurrence;
   late String _selectedCurrency;
+  late DateTime _selectedDate;
   bool _isEditing = false; 
 
   final List<String> _accounts = ['Cash', 'Bank', 'Credit'];
@@ -41,6 +42,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
     _isTransfer = widget.transaction.isTransfer;
     _selectedCategory = widget.transaction.category;
     _selectedAccount = widget.transaction.account;
+    _selectedDate = widget.transaction.date;
     
     // Safety check: ensure 'To Account' doesn't accidentally initialize identical to source account
     _selectedToAccount = widget.transaction.toAccount ?? 
@@ -57,6 +59,18 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
     super.dispose();
   }
 
+  void _presentDatePicker() async {
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(now.year - 5),
+      lastDate: now,
+    );
+    if (pickedDate == null) return;
+    setState(() => _selectedDate = pickedDate);
+  }
+
   void _saveChanges() {
     final enteredTitle = _titleController.text.trim();
     final enteredAmount = double.tryParse(_amountController.text) ?? 0.0;
@@ -70,7 +84,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
       id: widget.transaction.id, 
       title: enteredTitle,
       amount: enteredAmount,
-      date: widget.transaction.date, 
+      date: _selectedDate, 
       category: _isTransfer ? 'Transfer' : (_selectedCategory ?? 'Misc'),
       account: _selectedAccount,
       isExpense: _isTransfer ? false : _isExpense,
@@ -255,6 +269,31 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: _presentDatePicker,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(border: Border.all(color: Colors.white24), borderRadius: BorderRadius.circular(8)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.calendar_month, color: theme.colorScheme.primary, size: 20),
+                            const SizedBox(width: 12),
+                            const Text('Transaction Date:', style: TextStyle(color: Colors.white70)),
+                          ],
+                        ),
+                        Text(
+                          DateFormat('dd MMM yyyy').format(_selectedDate),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextField(

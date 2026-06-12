@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:app_settings/app_settings.dart';
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
 
-class SmsPermissionPage extends StatelessWidget {
+class SmsPermissionPage extends StatefulWidget {
   final VoidCallback onAllow;
   final VoidCallback onSkip;
 
@@ -11,8 +15,86 @@ class SmsPermissionPage extends StatelessWidget {
   });
 
   @override
+  State<SmsPermissionPage> createState() => _SmsPermissionPageState();
+}
+
+class _SmsPermissionPageState extends State<SmsPermissionPage> with WidgetsBindingObserver {
+  bool _isSmsGranted = false;
+  bool _isBatteryOptimDisabled = false;
+  bool _isAutostartEnabled = false; // Note: Hard to detect reliably on Android
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkPermissions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkPermissions();
+    }
+  }
+
+  Future<void> _checkPermissions() async {
+    final smsStatus = await Permission.sms.status;
+    final batteryStatus = await Permission.ignoreBatteryOptimizations.isGranted;
+
+    if (mounted) {
+      setState(() {
+        _isSmsGranted = smsStatus.isGranted;
+        _isBatteryOptimDisabled = batteryStatus;
+      });
+    }
+  }
+
+  Future<void> _openAutostartSettings() async {
+    // List of common vendor-specific autostart Intents
+    final List<Map<String, String>> intents = [
+      {'package': 'com.miui.securitycenter', 'component': 'com.miui.permcenter.autostart.AutoStartManagementActivity'},
+      {'package': 'com.letv.android.letvsafe', 'component': 'com.letv.android.letvsafe.AutobootManageActivity'},
+      {'package': 'com.huawei.systemmanager', 'component': 'com.huawei.systemmanager.optimize.process.ProtectActivity'},
+      {'package': 'com.coloros.safecenter', 'component': 'com.coloros.safecenter.permission.startup.StartupAppListActivity'},
+      {'package': 'com.oppo.safe', 'component': 'com.oppo.safe.permission.startup.StartupAppListActivity'},
+      {'package': 'com.iqoo.secure', 'component': 'com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity'},
+      {'package': 'com.vivo.permissionmanager', 'component': 'com.vivo.permissionmanager.activity.BgStartUpManagerActivity'},
+      {'package': 'com.samsung.android.lool', 'component': 'com.samsung.android.sm.ui.battery.BatteryActivity'},
+    ];
+
+    bool launched = false;
+    for (var intentData in intents) {
+      try {
+        final intent = AndroidIntent(
+          action: 'android.intent.action.MAIN',
+          package: intentData['package'],
+          componentName: intentData['component'],
+          flags: [Flag.FLAG_ACTIVITY_NEW_TASK],
+        );
+        await intent.launch();
+        launched = true;
+        setState(() => _isAutostartEnabled = true);
+        break;
+      } catch (e) {
+        debugPrint('Intent failed: ${intentData['package']}');
+      }
+    }
+    
+    if (!launched) {
+      await openAppSettings();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final allCriticalGranted = _isSmsGranted && _isBatteryOptimDisabled;
 
     return Scaffold(
       body: SafeArea(
@@ -37,7 +119,7 @@ class SmsPermissionPage extends StatelessWidget {
               ),
               const SizedBox(height: 28),
               Text(
-                'Let Filous read transaction SMS alerts',
+                'Enable Automated Logging',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
@@ -47,7 +129,7 @@ class SmsPermissionPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'This helps Filous automatically detect bank and card transaction messages and append them to your transaction log, so you do not have to enter every expense manually.',
+                'To track transactions in the background reliably, we need a few permissions.',
                 style: TextStyle(
                   fontSize: 15,
                   height: 1.5,
@@ -56,52 +138,77 @@ class SmsPermissionPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'What we use it for',
+                'Required Steps',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   color: theme.colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 12),
-              _InfoRow(
-                icon: Icons.bolt_outlined,
-                text: 'Detect debit and credit alerts as they arrive',
+              _StepAction(
+                icon: Icons.sms_outlined,
+                title: 'SMS Permission',
+                subtitle: 'Read transaction alerts automatically.',
+                onTap: widget.onAllow,
+                buttonLabel: _isSmsGranted ? 'GRANTED' : 'GRANT',
+                isGranted: _isSmsGranted,
               ),
-              const SizedBox(height: 10),
-              _InfoRow(
-                icon: Icons.playlist_add_check_circle_outlined,
-                text: 'Auto-add likely transactions into your log',
+              const SizedBox(height: 12),
+              _StepAction(
+                icon: Icons.battery_saver_outlined,
+                title: 'Battery Optimization',
+                subtitle: 'Prevent Android from stopping the listener.',
+                onTap: () async {
+                  await Permission.ignoreBatteryOptimizations.request();
+                  if (!(await Permission.ignoreBatteryOptimizations.isGranted)) {
+                    await AppSettings.openAppSettings(type: AppSettingsType.batteryOptimization);
+                  }
+                  _checkPermissions();
+                },
+                buttonLabel: _isBatteryOptimDisabled ? 'DISABLED' : 'DISABLE',
+                isGranted: _isBatteryOptimDisabled,
               ),
-              const SizedBox(height: 10),
-              _InfoRow(
-                icon: Icons.lock_outline,
-                text: 'Only needed for SMS-based transaction detection',
+              const SizedBox(height: 12),
+              _StepAction(
+                icon: Icons.rocket_launch_outlined,
+                title: 'Autostart',
+                subtitle: 'Allow listener to start on boot.',
+                onTap: _openAutostartSettings,
+                buttonLabel: _isAutostartEnabled ? 'ENABLED' : 'ENABLE',
+                isGranted: _isAutostartEnabled,
               ),
               const Spacer(),
               SizedBox(
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: onAllow,
+                  onPressed: () {
+                    if (!allCriticalGranted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please grant all required permissions for best results.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                    widget.onSkip();
+                  },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
+                    backgroundColor: allCriticalGranted 
+                        ? theme.colorScheme.primary 
+                        : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                    foregroundColor: allCriticalGranted 
+                        ? theme.colorScheme.onPrimary 
+                        : theme.colorScheme.onSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Continue To Permission Request',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  child: Text(
+                    allCriticalGranted ? 'GET STARTED' : 'CONTINUE ANYWAY',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Center(
-                child: TextButton(
-                  onPressed: onSkip,
-                  child: const Text('Maybe later'),
                 ),
               ),
             ],
@@ -112,44 +219,67 @@ class SmsPermissionPage extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
+class _StepAction extends StatelessWidget {
   final IconData icon;
-  final String text;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final String buttonLabel;
+  final bool isGranted;
 
-  const _InfoRow({
+  const _StepAction({
     required this.icon,
-    required this.text,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    required this.buttonLabel,
+    this.isGranted = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(top: 2),
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, size: 16, color: theme.colorScheme.primary),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isGranted 
+            ? theme.colorScheme.primary.withOpacity(0.05)
+            : theme.colorScheme.surfaceVariant.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isGranted ? theme.colorScheme.primary.withOpacity(0.2) : Colors.white.withOpacity(0.05),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.45,
-              color: theme.colorScheme.onSurface.withOpacity(0.78),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isGranted ? Icons.check_circle : icon, 
+            size: 24, 
+            color: isGranted ? Colors.greenAccent : theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(subtitle, style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurface.withOpacity(0.5))),
+              ],
             ),
           ),
-        ),
-      ],
+          TextButton(
+            onPressed: isGranted ? null : onTap,
+            child: Text(
+              buttonLabel, 
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isGranted ? Colors.greenAccent : theme.colorScheme.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

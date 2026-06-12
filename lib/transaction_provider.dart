@@ -52,6 +52,7 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
         'Healthcare': 2000.0,
         'Shopping': 6000.0,
         'Education': 3000.0,
+        'UPI': 5000.0,
         'Misc': 2000.0,
       };
       for (var entry in defaultLibrary.entries) {
