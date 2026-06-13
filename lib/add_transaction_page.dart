@@ -94,8 +94,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     final useCompactLayout = screenWidth < 420;
     final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
 
-    if (_selectedCategory == null || !activeCategories.contains(_selectedCategory)) {
-      _selectedCategory = activeCategories.isNotEmpty ? activeCategories.first : null;
+    // Ensure _selectedCategory is valid but don't force it every build if already set
+    if (activeCategories.isNotEmpty && (_selectedCategory == null || !activeCategories.contains(_selectedCategory))) {
+      _selectedCategory = activeCategories.first;
     }
 
     return Scaffold(
@@ -217,7 +218,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     labelText: 'Currency',
                     isDense: true,
                   ),
-                  items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(cur))).toList(),
+                  items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(CurrencyService.getCurrencyDisplayName(cur), overflow: TextOverflow.ellipsis))).toList(),
                   onChanged: (val) => setState(() => _selectedCurrency = val!),
                 ),
               ] else
@@ -246,7 +247,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           labelText: 'Currency',
                           isDense: true,
                         ),
-                        items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(cur))).toList(),
+                        items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(CurrencyService.getCurrencyDisplayName(cur), overflow: TextOverflow.ellipsis))).toList(),
                         onChanged: (val) => setState(() => _selectedCurrency = val!),
                       ),
                     ),

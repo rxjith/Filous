@@ -156,17 +156,23 @@ class BackupService {
     await _transactionsBox.clear();
     await _categoriesBox.clear();
 
+    // Batch process categories
+    final Map<String, BudgetCategory> categoryModels = {};
     for (final category in categories) {
-      final model = BudgetCategory(
-        name: category['name'] as String,
+      final name = category['name'] as String;
+      categoryModels[name] = BudgetCategory(
+        name: name,
         monthlyLimit: (category['monthlyLimit'] as num).toDouble(),
       );
-      await _categoriesBox.put(model.name, model);
     }
+    await _categoriesBox.putAll(categoryModels);
 
+    // Batch process transactions
+    final Map<String, Transaction> transactionModels = {};
     for (final tx in transactions) {
-      final model = Transaction(
-        id: tx['id'] as String,
+      final id = tx['id'] as String;
+      transactionModels[id] = Transaction(
+        id: id,
         title: tx['title'] as String,
         amount: (tx['amount'] as num).toDouble(),
         date: DateTime.parse(tx['date'] as String),
@@ -179,13 +185,22 @@ class BackupService {
         currency: tx['currency'] as String? ?? 'INR',
         exchangeRate: (tx['exchangeRate'] as num?)?.toDouble() ?? 1.0,
       );
-      await _transactionsBox.put(model.id, model);
     }
+    await _transactionsBox.putAll(transactionModels);
 
+    // Restore settings
     for (final entry in settings.entries) {
       await _settingsBox.put(entry.key, entry.value);
     }
+    
     await _settingsBox.put(lastBackupAtKey, DateTime.now().toIso8601String());
+    
+    // Explicitly flush all boxes to ensure data is safe before potential app reload
+    await Future.wait([
+      _transactionsBox.flush(),
+      _categoriesBox.flush(),
+      _settingsBox.flush(),
+    ]);
 
     return true;
   }

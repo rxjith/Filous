@@ -10,8 +10,65 @@ class CurrencyService {
     'NZD', 'SEK', 'KRW', 'SGD', 'NOK', 'MXN', 'RUB', 'ZAR', 'TRY', 'BRL',
     'TWD', 'DKK', 'PLN', 'THB', 'IDR', 'HUF', 'CZK', 'ILS', 'CLP', 'PHP',
     'AED', 'COP', 'SAR', 'MYR', 'RON', 'VND', 'ARS', 'IQD', 'KWD', 'NGN',
-    'PKR', 'UAH', 'EGP', 'QAR', 'OMR', 'KZT', 'BDT', 'MAD', 'THB', 'LKR',
+    'PKR', 'UAH', 'EGP', 'QAR', 'OMR', 'KZT', 'BDT', 'MAD', 'LKR',
   ];
+
+  static const Map<String, String> currencyNames = {
+    'INR': 'Indian Rupee',
+    'USD': 'US Dollar',
+    'EUR': 'Euro',
+    'GBP': 'British Pound',
+    'JPY': 'Japanese Yen',
+    'AUD': 'Australian Dollar',
+    'CAD': 'Canadian Dollar',
+    'CHF': 'Swiss Franc',
+    'CNY': 'Chinese Yuan',
+    'HKD': 'Hong Kong Dollar',
+    'NZD': 'New Zealand Dollar',
+    'SEK': 'Swedish Krona',
+    'KRW': 'South Korean Won',
+    'SGD': 'Singapore Dollar',
+    'NOK': 'Norwegian Krone',
+    'MXN': 'Mexican Peso',
+    'RUB': 'Russian Ruble',
+    'ZAR': 'South African Rand',
+    'TRY': 'Turkish Lira',
+    'BRL': 'Brazilian Real',
+    'TWD': 'Taiwan Dollar',
+    'DKK': 'Danish Krone',
+    'PLN': 'Polish Zloty',
+    'THB': 'Thai Baht',
+    'IDR': 'Indonesian Rupiah',
+    'HUF': 'Hungarian Forint',
+    'CZK': 'Czech Koruna',
+    'ILS': 'Israeli Shekel',
+    'CLP': 'Chilean Peso',
+    'PHP': 'Philippine Peso',
+    'AED': 'UAE Dirham',
+    'COP': 'Colombian Peso',
+    'SAR': 'Saudi Riyal',
+    'MYR': 'Malaysian Ringgit',
+    'RON': 'Romanian Leu',
+    'VND': 'Vietnamese Dong',
+    'ARS': 'Argentine Peso',
+    'IQD': 'Iraqi Dinar',
+    'KWD': 'Kuwaiti Dinar',
+    'NGN': 'Nigerian Naira',
+    'PKR': 'Pakistani Rupee',
+    'UAH': 'Ukrainian Hryvnia',
+    'EGP': 'Egyptian Pound',
+    'QAR': 'Qatari Riyal',
+    'OMR': 'Omani Rial',
+    'KZT': 'Kazakhstani Tenge',
+    'BDT': 'Bangladeshi Taka',
+    'MAD': 'Moroccan Dirham',
+    'LKR': 'Sri Lankan Rupee',
+  };
+
+  static String getCurrencyDisplayName(String code) {
+    final name = currencyNames[code];
+    return name != null ? '$code - $name' : code;
+  }
 
   // Safe fallback parameters if the machine drops its internet connection
   static const Map<String, double> fallbackRates = {

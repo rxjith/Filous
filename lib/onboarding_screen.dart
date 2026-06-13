@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'budget_category_model.dart';
 import 'transaction_provider.dart';
 
 enum AppMode { budget, spending }
@@ -55,7 +56,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   int get _totalSteps => _selectedMode == AppMode.budget ? 4 : 3;
 
-  void _nextPage() {
+  void _nextPage() async {
     if (_currentPage < _totalSteps - 1) {
       if (_currentPage == 2 && _selectedMode == AppMode.budget) {
         // Prepare initial limits based on total budget
@@ -75,35 +76,49 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      _completeOnboarding();
+      setState(() => _currentPage++); // Move to a "processing" state visually if needed
+      await _completeOnboarding();
     }
   }
 
   Future<void> _completeOnboarding() async {
-    final settingsBox = Hive.box('app_settings');
-    await settingsBox.put('app_mode', _selectedMode.index);
-    
-    final notifier = ref.read(transactionProvider.notifier);
-    final categoryBox = await Hive.openBox('categories_box');
-    await categoryBox.clear();
+    try {
+      final settingsBox = Hive.box('app_settings');
+      debugPrint('Completing onboarding... Selected mode: $_selectedMode');
+      await settingsBox.put('app_mode', _selectedMode.index);
+      
+      final notifier = ref.read(transactionProvider.notifier);
+      
+      // Clear and prepare categories
+      final categoryBox = await Hive.openBox<BudgetCategory>('categories_box');
+      await categoryBox.clear();
 
-    if (_selectedMode == AppMode.budget) {
-      for (var entry in _selectedCategories.entries) {
-        if (entry.value) {
-          final limit = double.tryParse(_categoryLimitControllers[entry.key]?.text ?? '0') ?? 0.0;
-          notifier.addOrUpdateCategory(entry.key, limit);
+      if (_selectedMode == AppMode.budget) {
+        for (var entry in _selectedCategories.entries) {
+          if (entry.value) {
+            final limit = double.tryParse(_categoryLimitControllers[entry.key]?.text ?? '0') ?? 0.0;
+            notifier.addOrUpdateCategory(entry.key, limit);
+          }
+        }
+      } else {
+        // Spending mode: limits are 0
+        for (var entry in _selectedCategories.entries) {
+          if (entry.value) {
+            notifier.addOrUpdateCategory(entry.key, 0.0);
+          }
         }
       }
-    } else {
-      // Spending mode: limits are 0
-      for (var entry in _selectedCategories.entries) {
-        if (entry.value) {
-          notifier.addOrUpdateCategory(entry.key, 0.0);
-        }
-      }
+
+      debugPrint('Setting is_onboarded to true');
+      await settingsBox.put('is_onboarded', true);
+      await settingsBox.flush();
+      
+      // Small artificial delay to ensure the ValueListenableBuilder in main.dart
+      // has enough time to register the state change before any other microtasks.
+      await Future.delayed(const Duration(milliseconds: 100));
+    } catch (e) {
+      debugPrint('Error during onboarding completion: $e');
     }
-
-    await settingsBox.put('is_onboarded', true);
   }
 
   @override
