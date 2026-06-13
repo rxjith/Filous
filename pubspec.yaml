@@ -41,6 +41,21 @@ dev_dependencies:
   # Code Generation Tools (Required to make Hive database models talk to Dart)
   build_runner: ^2.4.9
   hive_generator: ^2.0.1
+  
+  # 🛠️ Added for automated app icon generation
+  flutter_launcher_icons: ^0.13.1
+
+# 🔥 App Icon Asset Layout Configuration
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icon/icon_foreground.png"
+  adaptive_icon_background: "#ECFADC"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
 
 flutter:
   uses-material-design: true
+  
+  # 📂 Registering the folder path so the asset manager tracks the image
+  assets:
+    - assets/icon/
