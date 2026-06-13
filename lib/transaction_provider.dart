@@ -30,7 +30,8 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
       return budgets;
     }
 
-    for (var cat in _categoryBox!.values) {
+    final categories = _categoryBox!.values.toList();
+    for (var cat in categories) {
       budgets[cat.name] = cat.monthlyLimit;
     }
     return budgets;

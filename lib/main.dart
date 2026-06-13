@@ -26,7 +26,7 @@ void backgroundMessageHandler(SmsMessage message) async {
   
   // Since the background worker runs in an isolated native engine thread,
   // we initialize Hive here to safely save the transaction even when closed.
-  await Hive.initFlutter('test_db');
+  await Hive.initFlutter();
   if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(TransactionAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(BudgetCategoryAdapter());
   
@@ -48,7 +48,7 @@ void main() async {
   }
   
   // Initialize Hive Storage
-  await Hive.initFlutter('test_db');
+  await Hive.initFlutter();
   if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(TransactionAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(BudgetCategoryAdapter()); 
   await Hive.openBox('app_settings');

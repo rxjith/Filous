@@ -218,7 +218,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     labelText: 'Currency',
                     isDense: true,
                   ),
-                  items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(CurrencyService.getCurrencyDisplayName(cur), overflow: TextOverflow.ellipsis))).toList(),
+                  items: _currencies.map((cur) => DropdownMenuItem(
+                    value: cur, 
+                    child: Text(CurrencyService.getCurrencyDisplayName(cur))
+                  )).toList(),
+                  selectedItemBuilder: (context) {
+                    return _currencies.map((cur) => Text(
+                      CurrencyService.getCurrencyDisplayName(cur),
+                      overflow: TextOverflow.ellipsis,
+                    )).toList();
+                  },
                   onChanged: (val) => setState(() => _selectedCurrency = val!),
                 ),
               ] else
@@ -247,7 +256,16 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                           labelText: 'Currency',
                           isDense: true,
                         ),
-                        items: _currencies.map((cur) => DropdownMenuItem(value: cur, child: Text(CurrencyService.getCurrencyDisplayName(cur), overflow: TextOverflow.ellipsis))).toList(),
+                        items: _currencies.map((cur) => DropdownMenuItem(
+                          value: cur, 
+                          child: Text(CurrencyService.getCurrencyDisplayName(cur))
+                        )).toList(),
+                        selectedItemBuilder: (context) {
+                          return _currencies.map((cur) => Text(
+                            CurrencyService.getCurrencyDisplayName(cur),
+                            overflow: TextOverflow.ellipsis,
+                          )).toList();
+                        },
                         onChanged: (val) => setState(() => _selectedCurrency = val!),
                       ),
                     ),
