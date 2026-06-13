@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:another_telephony/telephony.dart'; // Modern Android compatible fork
+import 'package:another_telephony/telephony.dart';
 
 import 'backup_service.dart';
 import 'transaction_model.dart';
@@ -41,6 +43,12 @@ void main() async {
   
   // Initialize Firebase
   await Firebase.initializeApp();
+  
+  // Initialize App Check to protect Firebase backend from unauthorized access
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+    appleProvider: AppleProvider.deviceCheck,
+  );
   
   // Initialize Hive Storage
   await Hive.initFlutter('test_db');
