@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:another_telephony/telephony.dart';
@@ -109,8 +108,13 @@ class _FilousAppState extends ConsumerState<FilousApp>
       return;
     }
 
+    // Only start listening if it was previously enabled. 
+    // Do NOT request permissions here; just try to start the listener if granted.
     if (smsAutoLoggingEnabled) {
-      await _requestSmsPermissionAndStartListening(markExplainerSeen: false);
+      final status = await telephony.requestPhoneAndSmsPermissions;
+      if (status == true) {
+        _startIncomingSmsListener();
+      }
     }
 
     try {
@@ -238,6 +242,8 @@ class _FilousAppState extends ConsumerState<FilousApp>
           home: StreamBuilder<User?>(
             stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {
+              debugPrint('Auth Stream: hasData=${snapshot.hasData}, connectionState=${snapshot.connectionState}');
+              
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(body: Center(child: CircularProgressIndicator()));
               }
@@ -247,27 +253,33 @@ class _FilousAppState extends ConsumerState<FilousApp>
                   valueListenable: _settingsBox.listenable(keys: [_isOnboardedKey]),
                   builder: (context, Box box, _) {
                     final isOnboarded = box.get(_isOnboardedKey, defaultValue: false) as bool;
+                    debugPrint('Onboarding State: isOnboarded=$isOnboarded, isBootstrapping=$_isBootstrapping, showSmsExplainer=$_showSmsPermissionExplainer');
 
                     if (!isOnboarded) {
                       return const OnboardingScreen();
                     }
 
-                    return _isBootstrapping
-                        ? const Scaffold(
-                            body: Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          )
-                        : _showSmsPermissionExplainer
-                            ? SmsPermissionPage(
-                                onAllow: _handleSmsPermissionAccepted,
-                                onSkip: _handleSmsPermissionSkipped,
-                              )
-                            : const DashboardScreen();
+                    if (_isBootstrapping) {
+                      return const Scaffold(
+                        body: Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    if (_showSmsPermissionExplainer) {
+                      return SmsPermissionPage(
+                        onAllow: _handleSmsPermissionAccepted,
+                        onSkip: _handleSmsPermissionSkipped,
+                      );
+                    }
+
+                    return const DashboardScreen();
                   },
                 );
               }
               
+              debugPrint('Routing to LoginScreen (No User Data)');
               return const LoginScreen();
             },
           ),
