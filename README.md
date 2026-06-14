@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/rxjith/Filous/assets/icon/icon_foreground.png>
+<img src="https://github.com/rxjith/Filous/blob/main/assets/icon/icon_foreground.png">
 
 # 💸 Filous | فلوس
 
