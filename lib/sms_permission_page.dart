@@ -56,7 +56,7 @@ class _SmsPermissionPageState extends State<SmsPermissionPage> with WidgetsBindi
   }
 
   Future<void> _openAutostartSettings() async {
-    // List of common vendor-specific autostart Intents
+    // Common vendor-specific autostart intents
     final List<Map<String, String>> intents = [
       {'package': 'com.miui.securitycenter', 'component': 'com.miui.permcenter.autostart.AutoStartManagementActivity'},
       {'package': 'com.letv.android.letvsafe', 'component': 'com.letv.android.letvsafe.AutobootManageActivity'},

@@ -18,14 +18,14 @@ import 'theme_provider.dart';
 import 'onboarding_screen.dart';
 import 'login_screen.dart';
 
-/// 🔥 Top-level global function required to capture SMS events 
+/// Global function to capture SMS events 
 /// when the app is completely closed or running in the background.
 @pragma('vm:entry-point')
 void backgroundMessageHandler(SmsMessage message) async {
   debugPrint("📩 Background SMS Intercepted: ${message.body}");
   
   // Since the background worker runs in an isolated native engine thread,
-  // we initialize Hive here to safely save the transaction even when closed.
+  // I've initialize Hive here to safely save the transaction even when closed.
   await Hive.initFlutter();
   if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(TransactionAdapter());
   if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(BudgetCategoryAdapter());
@@ -187,7 +187,7 @@ class _FilousAppState extends ConsumerState<FilousApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // 🔥 Refresh the UI state from storage whenever the app comes back to focus
+      // Refresh the UI state from storage whenever the app comes back to focus
       // This picks up transactions saved by the backgroundMessageHandler
       ref.read(transactionProvider.notifier).reloadFromStorage();
       

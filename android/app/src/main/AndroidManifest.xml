@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:label="filous"
+        android:label="Filous"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <receiver android:name="com.shounakmulay.telephony.sms.IncomingSmsReceiver"

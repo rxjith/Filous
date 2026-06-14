@@ -1,4 +1,4 @@
-name: filous
+name: Filous
 description: "A sleek, minimalist budget tracker app."
 publish_to: 'none'
 
@@ -13,19 +13,18 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # Layout & Modern Design
-  dynamic_color: ^1.1.2       # Inherits theme colors from the OS/system wallpaper
-  fl_chart: ^0.66.0            # High-performance analytics charts for spending
+  dynamic_color: ^1.1.2       # Theme colors from the OS/system wallpaper
+  fl_chart: ^0.66.0            # Analytics charts for spending
 
-  # Firebase & Authentication
+  # Firebase & Auth
   firebase_core: ^3.11.0
   firebase_auth: ^5.5.0
   google_sign_in: ^6.2.2
 
-  # State Management & Ultra-fast Local Storage
+  # State Management & Local Storage
   flutter_riverpod: ^2.5.1     # Keeps app data rendering cleanly in sync
   hive: ^2.2.3
-  hive_flutter: ^1.1.0        # NoSQL database that saves data instantly to your SSD
+  hive_flutter: ^1.1.0        # NoSQL database that saves data instantly to your internal storage
   http: ^1.6.0
   intl: ^0.20.2
   another_telephony: ^0.4.1
@@ -42,20 +41,20 @@ dev_dependencies:
   build_runner: ^2.4.9
   hive_generator: ^2.0.1
   
-  # 🛠️ Added for automated app icon generation
+  # Added for automated app icon generation
   flutter_launcher_icons: ^0.13.1
 
-# 🔥 App Icon Asset Layout Configuration
+# App icon configuration for flutter_launcher_icons
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: false
   image_path: "assets/icon/icon_foreground.png"
-  adaptive_icon_background: "#ECFADC"
+  adaptive_icon_background: "#3E5133"
   adaptive_icon_foreground: "assets/icon/icon_foreground.png"
 
 flutter:
   uses-material-design: true
   
-  # 📂 Registering the folder path so the asset manager tracks the image
+  # Registering the folder path so the asset manager tracks the image
   assets:
     - assets/icon/

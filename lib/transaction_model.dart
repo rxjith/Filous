@@ -55,6 +55,6 @@ class Transaction extends HiveObject {
     this.exchangeRate = 1.0,
   });
 
-  // Normalizes foreign amounts into the baseline standard (INR)
+  // Normalizes foreign amounts into INR
   double get baseAmount => amount * exchangeRate;
 }

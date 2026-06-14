@@ -73,7 +73,7 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
     state = rawList; // Re-allocating the list triggers Riverpod listeners to rebuild UI
   }
 
-  // --- 🔥 Automated Category Guessing Engine ---
+  // --- Category Guessing Engine ---
   
   /// Scans a transaction name/merchant string and matches it to your seeded categories.
   String guessCategory(String title) {
@@ -142,10 +142,10 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   void deleteCategory(String name) {
     if (_categoryBox == null || !_categoryBox!.isOpen) return;
     
-    // 1. Delete the category configuration asset row
+    // Delete the category configuration asset row
     _categoryBox!.delete(name);
     
-    // 2. 🔥 FIX: Cascade update records matching deleted envelopes to 'Misc'
+    // Cascade update records matching deleted envelopes to 'Misc'
     // This prevents runtime chart rendering failure from orphaned categories
     for (var tx in _transactionBox.values) {
       if (tx.category == name) {
@@ -172,12 +172,12 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
   // --- Core Transaction Management ---
 
   void saveTransaction(Transaction tx) {
-    // 1. Determine optimized categorization group
+    // Determine optimized categorization group
     String finalCategory = tx.category.trim().isEmpty || tx.category == 'Misc'
         ? guessCategory(tx.title)
         : tx.category;
 
-    // 2. 🔥 FIX: Inject live matching exchange rate configuration values
+    // Inject live matching exchange rate configuration values
     // Previously, activeRates fetched from CurrencyService were never bound to transactions on save.
     double matchingRate = activeRates[tx.currency] ?? 1.0;
 

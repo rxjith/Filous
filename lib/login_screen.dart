@@ -137,7 +137,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      // Prevent keyboard layout compression bugs entirely
+      // Prevent keyboard layout compression bugs
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Center(

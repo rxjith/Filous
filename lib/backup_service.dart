@@ -195,7 +195,7 @@ class BackupService {
     
     await _settingsBox.put(lastBackupAtKey, DateTime.now().toIso8601String());
     
-    // Explicitly flush all boxes to ensure data is safe before potential app reload
+    // Explicitly flushing all boxes to ensure data is safe before potential app reload
     await Future.wait([
       _transactionsBox.flush(),
       _categoriesBox.flush(),

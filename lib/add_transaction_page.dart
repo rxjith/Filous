@@ -94,7 +94,6 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     final useCompactLayout = screenWidth < 420;
     final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
 
-    // Ensure _selectedCategory is valid but don't force it every build if already set
     if (activeCategories.isNotEmpty && (_selectedCategory == null || !activeCategories.contains(_selectedCategory))) {
       _selectedCategory = activeCategories.first;
     }

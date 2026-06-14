@@ -45,7 +45,7 @@ class DashboardScreen extends ConsumerWidget {
     final totalSpent = monthlyExpenses.fold<double>(0, (sum, tx) => sum + tx.baseAmount);
     final totalIncome = monthlyIncome.fold<double>(0, (sum, tx) => sum + tx.baseAmount);
     
-    // 🔥 Income Increment: receiving money increases your available budget for the month
+    // Income Increment: receiving money increases available budget for the month
     final effectiveTotalBudget = totalBudget + totalIncome;
     final remainingBudget = effectiveTotalBudget > totalSpent ? effectiveTotalBudget - totalSpent : 0.0;
     final budgetProgress = effectiveTotalBudget == 0 ? 0.0 : (totalSpent / effectiveTotalBudget).clamp(0.0, 1.0);

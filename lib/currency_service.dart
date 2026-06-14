@@ -70,7 +70,7 @@ class CurrencyService {
     return name != null ? '$code - $name' : code;
   }
 
-  // Safe fallback parameters if the machine drops its internet connection
+  // Safe fallback conversions if there's a drop in internet connection
   static const Map<String, double> fallbackRates = {
     'INR': 1.0,
     'USD': 95.16,

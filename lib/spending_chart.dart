@@ -24,7 +24,7 @@ class SpendingChart extends StatelessWidget {
       totalSpending += tx.baseAmount;
     }
 
-    // 🔥 1. Define a robust list of high-contrast minimalist accent colors
+    // Preset Color Palette
     final List<Color> dynamicPalette = [
       Colors.amberAccent,
       Colors.cyanAccent,
@@ -36,7 +36,7 @@ class SpendingChart extends StatelessWidget {
       Colors.blueGrey,
     ];
 
-    // 🔥 2. Assign colors to whatever categories exist in runtime dynamically
+    // Assign colors to whatever categories exist in runtime dynamically
     final Map<String, Color> categoryColors = {};
     final activeCategories = categoryMap.keys.toList();
     for (int i = 0; i < activeCategories.length; i++) {
@@ -45,7 +45,7 @@ class SpendingChart extends StatelessWidget {
 
     // Map aggregated values to fl_chart data structures without title text inside
     final List<PieChartSectionData> sections = categoryMap.entries.map((entry) {
-      // 🔥 Pulls dynamic color instead of looking for hardcoded strings
+      // Pulls dynamic color instead of looking for hardcoded strings
       final color = categoryColors[entry.key] ?? theme.colorScheme.primary;
 
       return PieChartSectionData(
@@ -73,7 +73,7 @@ class SpendingChart extends StatelessWidget {
             ),
           ),
           
-          // Modern Legend Index with Inline Percentages
+          // Index with Inline Percentages
           Expanded(
             flex: 5,
             child: SingleChildScrollView(
@@ -84,7 +84,7 @@ class SpendingChart extends StatelessWidget {
                   final cat = entry.key;
                   final amount = entry.value;
                   final percentage = (amount / totalSpending) * 100;
-                  // 🔥 Match legend color exactly with chart section slice
+                  // Match legend color exactly with chart section slice
                   final color = categoryColors[cat] ?? theme.colorScheme.primary;
                   
                   return Padding(

@@ -105,10 +105,10 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
     final screenWidth = MediaQuery.sizeOf(context).width;
     final useCompactLayout = screenWidth < 420;
     
-    // 1. Fetch real-time live envelopes configuration from Hive
+    // Fetch real-time live envelopes configuration from Hive
     final activeCategories = ref.watch(transactionProvider.notifier).categoryBudgets.keys.toList();
 
-    // 2. 🔥 CRITICAL SAFETY FIXED: Safe-fallback evaluation for dynamic categories.
+    // CRITICAL SAFETY FIXED: Safe-fallback evaluation for dynamic categories.
     // If the category was deleted or is missing, gracefully realign dropdown to prevent standard assertion failures.
     if (!_isTransfer && (_selectedCategory == null || !activeCategories.contains(_selectedCategory))) {
       if (activeCategories.contains('Misc')) {
