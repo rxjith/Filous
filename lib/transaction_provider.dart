@@ -166,4 +166,11 @@ class TransactionNotifier extends StateNotifier<List<Transaction>> {
     _transactionBox.delete(id);
     _loadAndProcess();
   }
+
+  void deleteTransactions(List<String> ids) {
+    for (var id in ids) {
+      _transactionBox.delete(id);
+    }
+    _loadAndProcess();
+  }
 }

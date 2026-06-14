@@ -6,12 +6,10 @@ import 'package:android_intent_plus/flag.dart';
 
 class SmsPermissionPage extends StatefulWidget {
   final VoidCallback onAllow;
-  final VoidCallback onSkip;
 
   const SmsPermissionPage({
     super.key,
     required this.onAllow,
-    required this.onSkip,
   });
 
   @override
@@ -137,26 +135,41 @@ class _SmsPermissionPageState extends State<SmsPermissionPage> with WidgetsBindi
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
-                'Required Steps',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.primary,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Required Steps',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '* Mandatory',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               _StepAction(
                 icon: Icons.sms_outlined,
-                title: 'SMS Permission',
+                title: 'SMS Permission *',
                 subtitle: 'Read transaction alerts automatically.',
-                onTap: widget.onAllow,
+                onTap: () async {
+                  await Permission.sms.request();
+                  _checkPermissions();
+                },
                 buttonLabel: _isSmsGranted ? 'GRANTED' : 'GRANT',
                 isGranted: _isSmsGranted,
               ),
               const SizedBox(height: 12),
               _StepAction(
                 icon: Icons.battery_saver_outlined,
-                title: 'Battery Optimization',
+                title: 'Battery Optimization *',
                 subtitle: 'Prevent Android from stopping the listener.',
                 onTap: () async {
                   await Permission.ignoreBatteryOptimizations.request();
@@ -168,11 +181,19 @@ class _SmsPermissionPageState extends State<SmsPermissionPage> with WidgetsBindi
                 buttonLabel: _isBatteryOptimDisabled ? 'DISABLED' : 'DISABLE',
                 isGranted: _isBatteryOptimDisabled,
               ),
+              const SizedBox(height: 24),
+              Text(
+                'Recommended',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ),
+              ),
               const SizedBox(height: 12),
               _StepAction(
                 icon: Icons.rocket_launch_outlined,
                 title: 'Autostart',
-                subtitle: 'Allow listener to start on boot.',
+                subtitle: 'Allow listener to start on boot (Vendor specific).',
                 onTap: _openAutostartSettings,
                 buttonLabel: _isAutostartEnabled ? 'ENABLED' : 'ENABLE',
                 isGranted: _isAutostartEnabled,
@@ -182,17 +203,16 @@ class _SmsPermissionPageState extends State<SmsPermissionPage> with WidgetsBindi
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (!allCriticalGranted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please grant all required permissions for best results.'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                    widget.onSkip();
-                  },
+                  onPressed: allCriticalGranted 
+                    ? widget.onAllow 
+                    : () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please grant SMS and Battery permissions to continue.'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: allCriticalGranted 
                         ? theme.colorScheme.primary 
@@ -206,7 +226,7 @@ class _SmsPermissionPageState extends State<SmsPermissionPage> with WidgetsBindi
                     elevation: 0,
                   ),
                   child: Text(
-                    allCriticalGranted ? 'GET STARTED' : 'CONTINUE ANYWAY',
+                    allCriticalGranted ? 'GET STARTED' : 'GRANT REQUIRED PERMISSIONS',
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
