@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'transaction_model.dart';
 import 'transaction_provider.dart';
+import 'currency_service.dart';
 
 class TransactionDetailModal extends ConsumerStatefulWidget {
   final Transaction transaction;
@@ -31,7 +32,7 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
 
   final List<String> _accounts = ['Cash', 'Bank', 'Credit'];
   final List<String> _recurrences = ['None', 'Daily', 'Weekly', 'Monthly', 'Yearly'];
-  final List<String> _currencies = ['INR', 'USD', 'EUR', 'GBP'];
+  final List<String> _currencies = CurrencyService.supportedCurrencies;
 
   @override
   void initState() {
@@ -327,7 +328,10 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                       labelText: 'Currency',
                     ),
                     items: _currencies
-                        .map((cur) => DropdownMenuItem(value: cur, child: Text(cur)))
+                        .map((cur) => DropdownMenuItem(
+                              value: cur, 
+                              child: Text(CurrencyService.getCurrencyDisplayName(cur), overflow: TextOverflow.ellipsis),
+                            ))
                         .toList(),
                     onChanged: (val) => setState(() => _selectedCurrency = val!),
                   ),
@@ -356,7 +360,10 @@ class _TransactionDetailModalState extends ConsumerState<TransactionDetailModal>
                             labelText: 'Currency',
                           ),
                           items: _currencies
-                              .map((cur) => DropdownMenuItem(value: cur, child: Text(cur)))
+                              .map((cur) => DropdownMenuItem(
+                                    value: cur, 
+                                    child: Text(CurrencyService.getCurrencyDisplayName(cur), overflow: TextOverflow.ellipsis),
+                                  ))
                               .toList(),
                           onChanged: (val) => setState(() => _selectedCurrency = val!),
                         ),
