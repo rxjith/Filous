@@ -18,10 +18,24 @@
 
 </div>
 
-> [!WARNING]
+> [!WARNINGS/DISCLOSURES]
 > **SMS Permissions** - Filous needs access to _read your SMS_ to *intercept payment information*
 > **Battery Optimization** - Filous needs unrestricted access to run in the background to allow for _SMS interception_ and also to keep you **logged in** at _all times_.
 > **_DISCLOSURE_** - Filous does **NOT** send off any data from your device, everything stays **local** and **ON your device**.
+
+<div>
+<h1 align="center"><a id="features"></a>Features</h1>
+<ul>
+<li><b>Dual Tracking Modes</b> — Choose between a goal-oriented <b>Budget Tracker</b> (categorized) or a detailed <b>Spending Tracker</b> (ledger style).</li>
+<li><b>Automatic SMS Logging</b> — Effortlessly record transactions in <b>real-time</b> by automatically parsing incoming bank SMS notifications.</li>
+<li><b>Smart Categorization</b> — An <i>intelligent heuristic engine</i> automatically guesses transaction categories based on <b>merchant details</b>.</li>
+<li>Visual Insights — Stay on top of your finances with <b>live charts</b> and <b>progress bars</b> that <i>visualize</i> your spending habits.</li>
+<li><b>Multi-Currency Support</b> — Track spending across <b>50+ currencies</b> with live, automated exchange rate fetching.</li>
+<li><b>Modern Material 3 Design</b> — A clean, modern interface featuring <b>Material You</b> dynamic coloring and customizable themes.</li>
+<li><b>Privacy First</b> — All your financial data is stored <b>securely</b>, and <b>locally</b> ON your device using <b>high-performance storage</b>.</li>
+<li><b>Reliable Backups</b> — Keep your data safe with <b>flexible manual exports</b> and <b>scheduled automatic backups</b> (Daily/Weekly/Monthly).</li>
+</ul>
+</div>
 
 <div align="center">
 <h1><a id="screenshots"></a>Screenshots</h1>
@@ -52,20 +66,6 @@
 
 </div>
 
-<div>
-<h1 align="center"><a id="features"></a>Features</h1>
-<ul>
-<li><b>Dual Tracking Modes</b> — Choose between a goal-oriented <b>Budget Tracker</b> (categorized) or a detailed <b>Spending Tracker</b> (ledger style).</li>
-<li><b>Automatic SMS Logging</b> — Effortlessly record transactions in <b>real-time</b> by automatically parsing incoming bank SMS notifications.</li>
-<li><b>Smart Categorization</b> — An <i>intelligent heuristic engine</i> automatically guesses transaction categories based on <b>merchant details</b>.</li>
-<li>Visual Insights — Stay on top of your finances with <b>live charts</b> and <b>progress bars</b> that <i>visualize</i> your spending habits.</li>
-<li><b>Multi-Currency Support</b> — Track spending across <b>50+ currencies</b> with live, automated exchange rate fetching.</li>
-<li><b>Modern Material 3 Design</b> — A clean, modern interface featuring <b>Material You</b> dynamic coloring and customizable themes.</li>
-<li><b>Privacy First</b> — All your financial data is stored <b>securely</b>, and <b>locally</b> ON your device using <b>high-performance storage</b>.</li>
-<li><b>Reliable Backups</b> — Keep your data safe with <b>flexible manual exports</b> and <b>scheduled automatic backups</b> (Daily/Weekly/Monthly).</li>
-</ul>
-</div>
-
 <div align="center">
 <h1><a id="download-now"></a>Download Now</h1>
 <a href="https://github.com/rxjith/Filous/releases/download/v1.0.0/Filous-arm64-v8a-v1.0.0.apk">
@@ -77,7 +77,7 @@
 <h1><a id="support-the-project"></a>Support The Project!</h1>
 
 <a href="https://ko-fi.com/rojith">
-<img src="https://github.com/rxjith/Filous/blob/main/metadata/Ko-Fi/support_me_on_kofi_badge_red.png" alt="Support Me on Ko-Fi Button" />
+<img src="https://github.com/rxjith/Filous/blob/main/metadata/Ko-Fi/support_me_on_kofi_badge_red.png" alt="Support Me on Ko-Fi Button" size="30%" />
 </a>
 
 </div>
