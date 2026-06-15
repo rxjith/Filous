@@ -12,6 +12,10 @@
 [![License](https://img.shields.io/github/license/rxjith/Filous?style=for-the-badge&labelColor=0d1117)](https://github.com/rxjith/Filous/blob/main/LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/rxjith/Filous/total?style=for-the-badge&labelColor=0d1117)](https://github.com/rxjith/Filous/releases)
 
+<br/>
+
+[**Download**](#download-now) · [**Features**](#features) · [**Screenshots**](#screenshots) · [**Support**](#support-the-project)
+
 </div>
 
 > [!WARNING]
@@ -20,7 +24,7 @@
 > **_DISCLOSURE_** - Filous does **NOT** send off any data from your device, everything stays **local** and **ON your device**.
 
 <div align="center">
-<h1>Screenshots</h1>
+<h1><a id="screenshots"></a>Screenshots</h1>
 
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Login_screen.jpg" alt="Login Interface" width="30%" />
 
@@ -49,7 +53,7 @@
 </div>
 
 <div>
-<h1 align="center">Features</h1>
+<h1 align="center"><a id="features"></a>Features</h1>
 <ul>
 <li><b>Dual Tracking Modes</b> — Choose between a goal-oriented <b>Budget Tracker</b> (categorized) or a detailed <b>Spending Tracker</b> (ledger style).</li>
 <li><b>Automatic SMS Logging</b> — Effortlessly record transactions in <b>real-time</b> by automatically parsing incoming bank SMS notifications.</li>
@@ -60,4 +64,20 @@
 <li><b>Privacy First</b> — All your financial data is stored <b>securely</b>, and <b>locally</b> ON your device using <b>high-performance storage</b>.</li>
 <li><b>Reliable Backups</b> — Keep your data safe with <b>flexible manual exports</b> and <b>scheduled automatic backups</b> (Daily/Weekly/Monthly).</li>
 </ul>
+</div>
+
+<div align="center">
+<h1><a id="download-now"></a>Download Now</h1>
+<a href="https://github.com/rxjith/Filous/releases/download/v1.0.0/Filous-arm64-v8a-v1.0.0.apk">
+    <img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Download from GitHub" height="60">
+</a>
+</div>
+
+<div align="center">
+<h1><a id="support-the-project"></a>Support The Project!</h1>
+
+<a href="https://ko-fi.com/rojith">
+<img src="https://github.com/rxjith/Filous/blob/main/metadata/Ko-Fi/support_me_on_kofi_badge_red.png" alt="Support Me on Ko-Fi Button" />
+</a>
+
 </div>
