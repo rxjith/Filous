@@ -22,5 +22,5 @@
 <div align="center">
 <h1>Screenshots</h1>
 
-<img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Login_screen.jpg" alt="Login Screen>
+<img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Login_screen.jpg" alt="Login Screen"/>
 </div>
