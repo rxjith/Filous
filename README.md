@@ -31,7 +31,7 @@
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_category_limits.jpg" alt="Category Limits" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Permissions.jpg" alt="Permissions" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_dashboard.jpg" alt="Budget Mode's Dashboard" width="30%" />
-<img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_edit_category_limits.jpg>
+<img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_edit_category_limits.jpg" alt="Edit Category Limits" width="30%" />
 
 <h3>Spending Tracker Mode</h3>
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Mode_selection_2.jpg" alt="Spending Tracker Mode Selected" width="30%" />
@@ -56,7 +56,7 @@
 <li><b>Smart Categorization</b> — An <i>intelligent heuristic engine</i> automatically guesses transaction categories based on <b>merchant details</b>.</li>
 <li>Visual Insights — Stay on top of your finances with <b>live charts</b> and <b>progress bars</b> that <i>visualize</i> your spending habits.</li>
 <li><b>Multi-Currency Support</b> — Track spending across <b>50+ currencies</b> with live, automated exchange rate fetching.</li>
-<li><b>Modern Material 3 Design</b> — A clean, modern interface featuring <b>Material You</b> dynamic coloring and customizable themes</li>
+<li><b>Modern Material 3 Design</b> — A clean, modern interface featuring <b>Material You</b> dynamic coloring and customizable themes.</li>
 <li><b>Privacy First</b> — All your financial data is stored <b>securely</b>, and <b>locally</b> ON your device using <b>high-performance storage</b>.</li>
 <li><b>Reliable Backups</b> — Keep your data safe with <b>flexible manual exports</b> and <b>scheduled automatic backups</b> (Daily/Weekly/Monthly).</li>
 </ul>
