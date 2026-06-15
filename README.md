@@ -27,7 +27,7 @@
 <h3>Budget Mode</h3>
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Mode_selection_1.jpg" alt="Budget Mode Selected" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_total_budget.jpg" alt="Total Monthly Budget" width="30%" />
-<img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/budget_mode_select_categories.jpg" alt="Select Categories" width="30%" />
+<img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_select_categories.jpg" alt="Select Categories" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_category_limits.jpg" alt="Category Limits" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Permissions.jpg" alt="Permissions" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_dashboard.jpg" alt="Budget Mode's Dashboard" width="30%" />
