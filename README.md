@@ -71,6 +71,23 @@
 <a href="https://github.com/rxjith/Filous/releases/download/v1.0.0/Filous-arm64-v8a-v1.0.0.apk">
     <img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Download from GitHub" height="60">
 </a>
+
+<p>If you face any issues installing the app onto your device due to Play Protect interference, please head to the Play Store and follow these steps:</p>
+
+<ol>
+<li>Click your Profile photo on the top right.</li>
+<li>Click Play Protect.</li>
+<li>Click the gear icon on the top right.</li>
+<li>Toggle the "Scan apps with Play Protect" to OFF.</li>
+<li>Toggle the "Improve harmful app detections to OFF.</li>
+<li>Install Filous from the .apk file.</li>
+<li>Toggle ON both settings toggled OFF previously.</li>
+</ol>
+
+> [!WARNING]
+> I am not responsible for any threats/malware/viruses installed onto your device after not re-enabling Play Protect as instructed in the instructions above.
+> **Filous** **does _NOT_** contain any malware nor does **Filous** send your data to ANY 3rd party vendors. 
+
 </div>
 
 <div align="center">
