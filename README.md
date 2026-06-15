@@ -38,7 +38,6 @@
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Spending_mode_disclaimer.jpg" alt="Spending Tracker Mode Disclaimer" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Spending_mode_select_categories.jpg" alt="Spending Mode: Select Categories" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Permissions.jpg" alt="Permissions" width="30%" />
-<img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Mode_selection_2.jpg" alt="Spending Tracker Mode Selected" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Spending_dashboard.jpg" alt="Spending Tracker Mode: Dashboard" width="30%" />
 
 <h3>Common</h3>
@@ -54,11 +53,11 @@
 <ul>
 <li><b>Dual Tracking Modes</b> — Choose between a goal-oriented <b>Budget Tracker</b> (categorized) or a detailed <b>Spending Tracker</b> (ledger style).</li>
 <li><b>Automatic SMS Logging</b> — Effortlessly record transactions in <b>real-time</b> by automatically parsing incoming bank SMS notifications.</li>
-<li><b>Smart Categorization</b> — An intelligent heuristic engine automatically guesses transaction categories based on merchant details.</li>
-<li>Visual Insights — Stay on top of your finances with interactive charts and progress bars taht visualize your spending habits.</li>
-<li><b>Multi-Currency Support</b> — Track spending across 50+ currencies with live, automated exchange rate fetching.</li>
-<li><b>Modern Material 3 Design</b> — A clean, modern interface featuring Material You dynamic coloring and customizable themes</li>
-<li><b>Privacy First</b> — All your financial data is stored securely, and locally ON your device using high-performance storage.</li>
-<li><b>Reliable Backups</b> — Keep your data safe with flexible manual exports and scheduled automatic backups (Daily/Weekly/Monthly).</li>
+<li><b>Smart Categorization</b> — An <i>intelligent heuristic engine</i> automatically guesses transaction categories based on <b>merchant details</b>.</li>
+<li>Visual Insights — Stay on top of your finances with <b>live charts</b> and <b>progress bars</b> that <i>visualize</i> your spending habits.</li>
+<li><b>Multi-Currency Support</b> — Track spending across <b>50+ currencies</b> with live, automated exchange rate fetching.</li>
+<li><b>Modern Material 3 Design</b> — A clean, modern interface featuring <b>Material You</b> dynamic coloring and customizable themes</li>
+<li><b>Privacy First</b> — All your financial data is stored <b>securely</b>, and <b>locally</b> ON your device using <b>high-performance storage</b>.</li>
+<li><b>Reliable Backups</b> — Keep your data safe with <b>flexible manual exports</b> and <b>scheduled automatic backups</b> (Daily/Weekly/Monthly).</li>
 </ul>
 </div>
