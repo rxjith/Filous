@@ -77,7 +77,7 @@
 <h1><a id="support-the-project"></a>Support The Project!</h1>
 
 <a href="https://ko-fi.com/rojith">
-<img src="https://github.com/rxjith/Filous/blob/main/metadata/Ko-Fi/support_me_on_kofi_badge_red.png" alt="Support Me on Ko-Fi Button" height="30%" />
+<img src="https://github.com/rxjith/Filous/blob/main/metadata/Ko-Fi/support_me_on_kofi_badge_red.png" alt="Support Me on Ko-Fi Button" width="30%" />
 </a>
 
 </div>
