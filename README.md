@@ -24,7 +24,7 @@
 
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Login_screen.jpg" alt="Login Interface" width="30%" />
 
-<h3>Budget Mode</h3>
+<h2>Budget Mode</h2>
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Mode_selection_1.jpg" alt="Budget Mode Selected" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_total_budget.jpg" alt="Total Monthly Budget" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_select_categories.jpg" alt="Select Categories" width="30%" />
@@ -33,14 +33,14 @@
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_dashboard.jpg" alt="Budget Mode's Dashboard" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Budget_mode_edit_category_limits.jpg" alt="Edit Category Limits" width="30%" />
 
-<h3>Spending Tracker Mode</h3>
+<h2>Spending Tracker Mode</h2>
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Mode_selection_2.jpg" alt="Spending Tracker Mode Selected" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Spending_mode_disclaimer.jpg" alt="Spending Tracker Mode Disclaimer" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Spending_mode_select_categories.jpg" alt="Spending Mode: Select Categories" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Permissions.jpg" alt="Permissions" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Spending_dashboard.jpg" alt="Spending Tracker Mode: Dashboard" width="30%" />
 
-<h3>Common</h3>
+<h2>Common</h2>
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/New_transaction.jpg" alt="Adding a new transaction" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Transaction_history.jpg" alt="Transaction History" width="30%" />
 <img src="https://github.com/rxjith/Filous/blob/main/metadata/screenshots/Deletion.jpg" alt="Deleting Transaction(s)" width="30%" />
