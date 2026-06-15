@@ -66,8 +66,8 @@
 
 </div>
 
-<div align="center">
-<h1><a id="download-now"></a>Download Now</h1>
+<div>
+<h1 align="center"><a id="download-now"></a>Download Now</h1>
 <a href="https://github.com/rxjith/Filous/releases/download/v1.0.0/Filous-arm64-v8a-v1.0.0.apk">
     <img src="https://github.com/machiav3lli/oandbackupx/blob/034b226cea5c1b30eb4f6a6f313e4dadcbb0ece4/badge_github.png" alt="Download from GitHub" height="60">
 </a>
@@ -84,7 +84,8 @@
 <li>Toggle ON both settings toggled OFF previously.</li>
 </ol>
 
-> [!WARNING]
+> [!NOTE]
+> **Disclaimer**
 > I am not responsible for any threats/malware/viruses installed onto your device after not re-enabling Play Protect as instructed in the instructions above.
 > **Filous** **does _NOT_** contain any malware nor does **Filous** send your data to ANY 3rd party vendors. 
 
