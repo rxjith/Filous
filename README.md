@@ -29,7 +29,7 @@
 <li><b>Dual Tracking Modes</b> — Choose between a goal-oriented <b>Budget Tracker</b> (categorized) or a detailed <b>Spending Tracker</b> (ledger style).</li>
 <li><b>Automatic SMS Logging</b> — Effortlessly record transactions in <b>real-time</b> by automatically parsing incoming bank SMS notifications.</li>
 <li><b>Smart Categorization</b> — An <i>intelligent heuristic engine</i> automatically guesses transaction categories based on <b>merchant details</b>.</li>
-<li>Visual Insights — Stay on top of your finances with <b>live charts</b> and <b>progress bars</b> that <i>visualize</i> your spending habits.</li>
+<li><b>Visual Insights</b> — Stay on top of your finances with <b>live charts</b> and <b>progress bars</b> that <i>visualize</i> your spending habits.</li>
 <li><b>Multi-Currency Support</b> — Track spending across <b>50+ currencies</b> with live, automated exchange rate fetching.</li>
 <li><b>Modern Material 3 Design</b> — A clean, modern interface featuring <b>Material You</b> dynamic coloring and customizable themes.</li>
 <li><b>Privacy First</b> — All your financial data is stored <b>securely</b>, and <b>locally</b> ON your device using <b>high-performance storage</b>.</li>
