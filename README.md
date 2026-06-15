@@ -91,7 +91,7 @@ If you face any issues installing the app onto your device due to Play Protect i
 
 > [!IMPORTANT]
 > **Disclaimer**
-> I am not responsible for any threats/malware/viruses installed onto your device after neglecting to re-enabling Play Protect as outlined above. 
+> I am not responsible for any threats, malware, or viruses installed onto your device after neglecting to re-enable Play Protect as outlined above. Filous does NOT contain any malware, nor does it transmit your personal data to any third-party servers.
 > **Filous does NOT contain any malware**, nor does it transmit your personal data to any third-party servers.
 
 ---
